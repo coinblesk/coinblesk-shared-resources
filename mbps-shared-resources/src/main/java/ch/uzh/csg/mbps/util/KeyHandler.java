@@ -15,6 +15,7 @@ import org.apache.commons.codec.binary.Base64;
 
 import ch.uzh.csg.mbps.model.Transaction;
 
+//TODO jeton: to be replaced by ch.uzh.csg.mbps.security.KeyHandler
 public class KeyHandler {
 	private static final String ALGORITHM = "RSA";
 	private static final String HASH_ALGORITHM = "SHA1withRSA";
@@ -83,4 +84,5 @@ public class KeyHandler {
 	public static Transaction retrieveTransaction(SignedObject signedObject) throws Exception {
 		return (Transaction) signedObject.getObject();
 	}
+	
 }
