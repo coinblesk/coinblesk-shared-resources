@@ -19,7 +19,6 @@ public class PayOutRule implements Serializable {
 		this.userId = user;
 		this.balanceLimit = balance;
 		this.payoutAddress = address;
-
 	}
 	
 	public PayOutRule(long user, int hour, int day, String address){

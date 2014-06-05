@@ -1,5 +1,7 @@
 package ch.uzh.csg.mbps.responseobject;
 
+import ch.uzh.csg.mbps.customserialization.ServerPaymentResponse;
+
 public class CustomResponseObject {
 	private boolean successful;
 	private String message;
@@ -8,6 +10,7 @@ public class CustomResponseObject {
 	private CreateTransactionTransferObject ctto = null;
 	private String encodedServerPublicKey = null;
 	private PayOutRulesTransferObject porto = null;
+	private ServerPaymentResponse spr = null;
 	private Type type;
 	
 	public enum Type {
@@ -24,11 +27,11 @@ public class CustomResponseObject {
 	}
 	
 	public CustomResponseObject(boolean successful, String message, Type type){
-		setSuccessful(successful);
-		setMessage(message);
-		setType(type);
+		this.successful = successful;
+		this.message = message;
+		this.type = type;
 	}
-	
+
 	public boolean isSuccessful() {
 		return successful;
 	}
@@ -44,37 +47,29 @@ public class CustomResponseObject {
 	public void setMessage(String message) {
 		this.message = message;
 	}
-	
-	public ReadAccountTransferObject getReadAccountTO() {
+
+	public ReadAccountTransferObject getRato() {
 		return rato;
 	}
-	
-	public GetHistoryTransferObject getGetHistoryTO() {
-		return ghto;
-	}
-	
-	public CreateTransactionTransferObject getCreateTransactionTO() {
-		return ctto;
-	}
-	
-	public void setReadAccountTO(ReadAccountTransferObject rato) {
+
+	public void setRato(ReadAccountTransferObject rato) {
 		this.rato = rato;
 	}
-	
-	public void setGetHistoryTO(GetHistoryTransferObject ghto) {
+
+	public GetHistoryTransferObject getGhto() {
+		return ghto;
+	}
+
+	public void setGhto(GetHistoryTransferObject ghto) {
 		this.ghto = ghto;
 	}
-	
-	public void setCreateTransactionTO(CreateTransactionTransferObject ctto) {
+
+	public CreateTransactionTransferObject getCtto() {
+		return ctto;
+	}
+
+	public void setCtto(CreateTransactionTransferObject ctto) {
 		this.ctto = ctto;
-	}
-	
-	public Type getType() {
-		return type;
-	}
-	
-	public void setType(Type type){
-		this.type = type;
 	}
 
 	public String getEncodedServerPublicKey() {
@@ -93,6 +88,22 @@ public class CustomResponseObject {
 		this.porto = porto;
 	}
 
+	public ServerPaymentResponse getServerPaymentResponse() {
+		return spr;
+	}
+
+	public void setServerPaymentResponse(ServerPaymentResponse spr) {
+		this.spr = spr;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public void setType(Type type) {
+		this.type = type;
+	}
+	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("successful: ");

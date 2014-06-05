@@ -2,6 +2,7 @@ package ch.uzh.csg.mbps.util;
 
 import java.io.Serializable;
 
+//TODO: used?
 public class Pair<T> implements Serializable {
 	private static final long serialVersionUID = -4191425920852909121L;
 	

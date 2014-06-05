@@ -1,55 +1,44 @@
 package ch.uzh.csg.mbps.responseobject;
 
 import java.io.Serializable;
-import java.security.SignedObject;
 
+import org.apache.commons.codec.binary.Base64;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
-import ch.uzh.csg.mbps.util.KeyHandler;
+import ch.uzh.csg.mbps.customserialization.DecoderFactory;
+import ch.uzh.csg.mbps.customserialization.ServerPaymentRequest;
+import ch.uzh.csg.mbps.customserialization.exceptions.IllegalArgumentException;
+import ch.uzh.csg.mbps.customserialization.exceptions.NotSignedException;
+import ch.uzh.csg.mbps.customserialization.exceptions.SerializationException;
 
 public class CreateTransactionTransferObject implements Serializable {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 5151699286970960013L;
 	
-	private String sellerBase64RawSignedObject;
-	private String buyerBase64RawSignedObject;
+	private String payloadBase64;
 	
 	public CreateTransactionTransferObject() {
 	}
 	
-	public CreateTransactionTransferObject(String sellerSignedObject, String buyerSignedObjet) {
-		this.sellerBase64RawSignedObject = sellerSignedObject;
-		this.buyerBase64RawSignedObject = buyerSignedObjet;
+	public CreateTransactionTransferObject(ServerPaymentRequest spr) throws IllegalArgumentException, NotSignedException {
+		if (spr == null)
+			throw new IllegalArgumentException("The payload cannot be null.");
+		
+		byte[] encodeBase64 = Base64.encodeBase64(spr.encode());
+		this.payloadBase64 = new String(encodeBase64);
 	}
 	
-	public CreateTransactionTransferObject(SignedObject one, SignedObject two) throws Exception {
-		this.sellerBase64RawSignedObject = KeyHandler.encodeSignedObject(one);
-		this.buyerBase64RawSignedObject = KeyHandler.encodeSignedObject(two);
+	public String getPayloadBase64() {
+		return payloadBase64;
 	}
 	
-	public String getSellerBase64RawSignedObject() {
-		return sellerBase64RawSignedObject;
-	}
-
-	public void setSellerBase64RawSignedObject(String sellerBase64RawSignedObject) {
-		this.sellerBase64RawSignedObject = sellerBase64RawSignedObject;
-	}
-
-	public String getBuyerBase64RawSignedObject() {
-		return buyerBase64RawSignedObject;
-	}
-
-	public void setBuyerBase64RawSignedObject(String buyerBase64RawSignedObject) {
-		this.buyerBase64RawSignedObject = buyerBase64RawSignedObject;
-	}
-	
-	
-	@JsonIgnore
-	public SignedObject getSellerSignedObject() throws Exception {
-		return KeyHandler.decodeSignedObject(sellerBase64RawSignedObject);
+	public void setPayload(String payloadBase64) {
+		this.payloadBase64 = payloadBase64;
 	}
 	
 	@JsonIgnore
-	public SignedObject getBuyerSignedObject() throws Exception {
-		return KeyHandler.decodeSignedObject(buyerBase64RawSignedObject);
+	public ServerPaymentRequest getServerPaymentRequest() throws IllegalArgumentException, SerializationException {
+		byte[] decode = Base64.decodeBase64(payloadBase64.getBytes());
+		return DecoderFactory.decode(ServerPaymentRequest.class, decode);
 	}
+	
 }

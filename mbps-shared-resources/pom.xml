@@ -4,7 +4,7 @@
 
 	<groupId>ch.uzh.csg</groupId>
 	<artifactId>mbps-shared-resources</artifactId>
-	<version>1.0.1</version>
+	<version>1.1.0</version>
 	<name>MBPS Shared Code</name>
 	<description>The shared code for the MBPS client and server	</description>
 
@@ -29,6 +29,13 @@
 			<artifactId>jackson-mapper-asl</artifactId>
 			<version>1.9.9</version>
 		</dependency>
+		
+		<!-- Custom Serialization Library -->
+	    <dependency>
+			<groupId>ch.uzh.csg</groupId>
+			<artifactId>custom-serialization</artifactId>
+			<version>0.0.1</version>
+	    </dependency>
 	</dependencies>
 
 </project>
