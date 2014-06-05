@@ -48,27 +48,27 @@ public class CustomResponseObject {
 		this.message = message;
 	}
 
-	public ReadAccountTransferObject getRato() {
+	public ReadAccountTransferObject getReadAccountTO() {
 		return rato;
 	}
 
-	public void setRato(ReadAccountTransferObject rato) {
+	public void setReadAccountTO(ReadAccountTransferObject rato) {
 		this.rato = rato;
 	}
 
-	public GetHistoryTransferObject getGhto() {
+	public GetHistoryTransferObject getGetHistoryTO() {
 		return ghto;
 	}
 
-	public void setGhto(GetHistoryTransferObject ghto) {
+	public void setGetHistoryTO(GetHistoryTransferObject ghto) {
 		this.ghto = ghto;
 	}
 
-	public CreateTransactionTransferObject getCtto() {
+	public CreateTransactionTransferObject getCreateTransactionTO() {
 		return ctto;
 	}
 
-	public void setCtto(CreateTransactionTransferObject ctto) {
+	public void setCreateTransactionTO(CreateTransactionTransferObject ctto) {
 		this.ctto = ctto;
 	}
 
@@ -80,11 +80,11 @@ public class CustomResponseObject {
 		this.encodedServerPublicKey = encodedServerPublicKey;
 	}
 
-	public PayOutRulesTransferObject getPorto() {
+	public PayOutRulesTransferObject getPayOutRulesTO() {
 		return porto;
 	}
 
-	public void setPorto(PayOutRulesTransferObject porto) {
+	public void setPayOutRulesTO(PayOutRulesTransferObject porto) {
 		this.porto = porto;
 	}
 
