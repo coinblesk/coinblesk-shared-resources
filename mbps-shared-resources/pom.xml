@@ -4,7 +4,7 @@
 
 	<groupId>ch.uzh.csg</groupId>
 	<artifactId>mbps-shared-resources</artifactId>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 	<name>MBPS Shared Code</name>
 	<description>The shared code for the MBPS client and server	</description>
 
