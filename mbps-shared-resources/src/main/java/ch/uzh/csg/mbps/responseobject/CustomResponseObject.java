@@ -13,8 +13,6 @@ public class CustomResponseObject {
 	private ServerPaymentResponse spr = null;
 	private Type type;
 	
-	//TODO jeton: refactor! use type to have information on how to cast Object (boolean successful, Type type, Object object.
-	
 	public enum Type {
 		LOGIN, LOGOUT, EXCHANGE_RATE, PAYOUT_RULE, HISTORY_EMAIL, PUBLIC_KEY_SAVED, OTHER;
 	}
