@@ -41,6 +41,7 @@ public class HistoryPayOutTransaction extends AbstractHistory {
 		sb.append(DisplayFormatBTC.format(getAmount()));
 		sb.append(" BTC to address: ");
 		sb.append(getBtcAddress());
+		sb.append("\n");
 		return sb.toString();
 	}
 	
