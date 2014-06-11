@@ -1,15 +1,15 @@
 package ch.uzh.csg.mbps.model;
 
 //TODO jeton: javadoc
-public class UserPublicKey {
+public class CustomPublicKey {
 	
 	private byte pkiAlgorithm;
 	private String publicKey;
 	
-	public UserPublicKey() {
+	public CustomPublicKey() {
 	}
 	
-	public UserPublicKey(byte pkiAlgorithm, String publicKey) {
+	public CustomPublicKey(byte pkiAlgorithm, String publicKey) {
 		this.pkiAlgorithm = pkiAlgorithm;
 		this.publicKey = publicKey;
 	}
