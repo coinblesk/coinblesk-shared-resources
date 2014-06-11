@@ -5,8 +5,6 @@ import java.math.BigDecimal;
 //TODO: javadoc
 public class Converter {
 	
-	//TODO jeton: move to shared resources?
-	
 	//	TODO simon: check conversion long/bigDecimal	
 	
 	/**
