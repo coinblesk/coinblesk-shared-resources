@@ -5,8 +5,6 @@ import java.math.BigDecimal;
 //TODO: javadoc
 public class Converter {
 	
-	//	TODO simon: check conversion long/bigDecimal	
-	
 	/**
 	 * Converts a long value back to its corresponding BigDecimal value by dividing.
 	 * 
@@ -15,8 +13,8 @@ public class Converter {
 	 */
 	public static BigDecimal getBigDecimalFromLong(long longValue){
 		BigDecimal bigDecimalValue = new BigDecimal(longValue);
-		bigDecimalValue.divide(new BigDecimal(100000000));
-		return bigDecimalValue;
+		BigDecimal result = bigDecimalValue.divide(new BigDecimal(100000000));
+		return result;
 	}
 	
 	/**
@@ -26,8 +24,8 @@ public class Converter {
 	 * @return bigDecimal as long
 	 */
 	public static long getLongFromBigDecimal(BigDecimal bigDecimalValue){
-		bigDecimalValue.multiply(new BigDecimal(100000000));
-		return bigDecimalValue.longValue();
+		BigDecimal result = bigDecimalValue.multiply(new BigDecimal(100000000));
+		return result.longValue();
 	}
 
 }

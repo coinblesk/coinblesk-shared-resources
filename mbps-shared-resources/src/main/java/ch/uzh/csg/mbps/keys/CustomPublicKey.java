@@ -1,4 +1,4 @@
-package ch.uzh.csg.mbps.model;
+package ch.uzh.csg.mbps.keys;
 
 //TODO jeton: javadoc
 public class CustomPublicKey {
