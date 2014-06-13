@@ -6,22 +6,32 @@ import java.io.Serializable;
 public class CustomPublicKey implements Serializable {
 	private static final long serialVersionUID = 6435515801039595212L;
 	
+	private byte keyNumber;
 	private byte pkiAlgorithm;
 	private String publicKey;
 	
 	public CustomPublicKey() {
 	}
 	
-	public CustomPublicKey(byte pkiAlgorithm, String publicKey) {
+	public CustomPublicKey(byte keyNumber, byte pkiAlgorithm, String publicKey) {
+		this.keyNumber = keyNumber;
 		this.pkiAlgorithm = pkiAlgorithm;
 		this.publicKey = publicKey;
 	}
 
-	public byte getPKIAlgorithm() {
+	public byte getKeyNumber() {
+		return keyNumber;
+	}
+
+	public void setKeyNumber(byte keyNumber) {
+		this.keyNumber = keyNumber;
+	}
+
+	public byte getPkiAlgorithm() {
 		return pkiAlgorithm;
 	}
 
-	public void setPKIAlgorithm(byte pkiAlgorithm) {
+	public void setPkiAlgorithm(byte pkiAlgorithm) {
 		this.pkiAlgorithm = pkiAlgorithm;
 	}
 
@@ -32,5 +42,5 @@ public class CustomPublicKey implements Serializable {
 	public void setPublicKey(String publicKey) {
 		this.publicKey = publicKey;
 	}
-
+	
 }
