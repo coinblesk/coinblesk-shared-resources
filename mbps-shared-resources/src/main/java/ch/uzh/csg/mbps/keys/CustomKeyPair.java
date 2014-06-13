@@ -11,6 +11,9 @@ public class CustomKeyPair implements Serializable {
 	private String publicKey;
 	private String privateKey;
 	
+	public CustomKeyPair() {
+	}
+	
 	public CustomKeyPair(byte pkiAlgorithm, byte keyNumber, String publicKey, String privateKey) {
 		this.pkiAlgorithm = pkiAlgorithm;
 		this.keyNumber = keyNumber;
@@ -32,6 +35,22 @@ public class CustomKeyPair implements Serializable {
 
 	public String getPrivateKey() {
 		return privateKey;
+	}
+
+	public void setPkiAlgorithm(byte pkiAlgorithm) {
+		this.pkiAlgorithm = pkiAlgorithm;
+	}
+
+	public void setKeyNumber(byte keyNumber) {
+		this.keyNumber = keyNumber;
+	}
+
+	public void setPublicKey(String publicKey) {
+		this.publicKey = publicKey;
+	}
+
+	public void setPrivateKey(String privateKey) {
+		this.privateKey = privateKey;
 	}
 	
 }
