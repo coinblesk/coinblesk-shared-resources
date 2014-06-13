@@ -12,9 +12,10 @@ public class CustomResponseObject {
 	private PayOutRulesTransferObject porto = null;
 	private ServerPaymentResponse spr = null;
 	private Type type;
+	private String balance = null;
 	
 	public enum Type {
-		LOGIN, LOGOUT, EXCHANGE_RATE, PAYOUT_RULE, HISTORY_EMAIL, PUBLIC_KEY_SAVED, OTHER;
+		LOGIN, LOGOUT, EXCHANGE_RATE, PAYOUT_RULE, HISTORY_EMAIL, AFTER_LOGIN, SAVE_PUBLIC_KEY, MAIN_ACTIVITY, OTHER;
 	}
 	
 	public CustomResponseObject() {
@@ -94,6 +95,14 @@ public class CustomResponseObject {
 
 	public void setServerPaymentResponse(ServerPaymentResponse spr) {
 		this.spr = spr;
+	}
+
+	public String getBalance() {
+		return balance;
+	}
+
+	public void setBalance(String balance) {
+		this.balance = balance;
 	}
 
 	public Type getType() {
