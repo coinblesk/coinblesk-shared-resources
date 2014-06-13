@@ -2,7 +2,16 @@ package ch.uzh.csg.mbps.keys;
 
 import java.io.Serializable;
 
-//TODO jeton: javadoc
+import ch.uzh.csg.mbps.customserialization.PKIAlgorithm;
+
+/**
+ * This class represents a stored (in a database or locally) custom key pair,
+ * consisting of a key number, a {@link PKIAlgorithm}, and base64 encoded public
+ * and private key.
+ * 
+ * @author Jeton Memeti
+ * 
+ */
 public class CustomKeyPair implements Serializable {
 	private static final long serialVersionUID = 8331342730288174626L;
 	

@@ -2,14 +2,16 @@ package ch.uzh.csg.mbps.util;
 
 import java.math.BigDecimal;
 
-//TODO: javadoc
+/**
+ * This class offers the functionality to convert BTC amounts in BigDecimal
+ * representation to longs and vice versa.
+ */
 public class Converter {
 	
 	/**
-	 * Converts a long value back to its corresponding BigDecimal value by dividing.
-	 * 
-	 * @param longValue
-	 * @return BigDecimal
+	 * Converts a long value back to its corresponding BigDecimal (used to
+	 * convert a long representing a BTC amount back to a BigDecimal with 8
+	 * decimal places).
 	 */
 	public static BigDecimal getBigDecimalFromLong(long longValue){
 		BigDecimal bigDecimalValue = new BigDecimal(longValue);
@@ -18,10 +20,8 @@ public class Converter {
 	}
 	
 	/**
-	 * Converts a BigDecimal value with 8 decimal places into a long value by multiplying.
-	 *  
-	 * @param bigDecimalValue
-	 * @return bigDecimal as long
+	 * Converts a BigDecimal value with 8 decimal places into a long (used to
+	 * represent a BTC amount in 1 long).
 	 */
 	public static long getLongFromBigDecimal(BigDecimal bigDecimalValue){
 		BigDecimal result = bigDecimalValue.multiply(new BigDecimal(100000000));
