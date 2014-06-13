@@ -1,7 +1,10 @@
 package ch.uzh.csg.mbps.keys;
 
+import java.io.Serializable;
+
 //TODO jeton: javadoc
-public class CustomPublicKey {
+public class CustomPublicKey implements Serializable {
+	private static final long serialVersionUID = 6435515801039595212L;
 	
 	private byte pkiAlgorithm;
 	private String publicKey;
