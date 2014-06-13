@@ -1,6 +1,7 @@
 package ch.uzh.csg.mbps.responseobject;
 
 import ch.uzh.csg.mbps.customserialization.ServerPaymentResponse;
+import ch.uzh.csg.mbps.keys.CustomPublicKey;
 
 public class CustomResponseObject {
 	private boolean successful;
@@ -8,11 +9,11 @@ public class CustomResponseObject {
 	private ReadAccountTransferObject rato = null;
 	private GetHistoryTransferObject ghto = null;
 	private CreateTransactionTransferObject ctto = null;
-	private String encodedServerPublicKey = null;
 	private PayOutRulesTransferObject porto = null;
 	private ServerPaymentResponse spr = null;
-	private Type type;
 	private String balance = null;
+	private CustomPublicKey serverPublicKey;
+	private Type type;
 	
 	public enum Type {
 		LOGIN, LOGOUT, EXCHANGE_RATE, PAYOUT_RULE, HISTORY_EMAIL, AFTER_LOGIN, SAVE_PUBLIC_KEY, MAIN_ACTIVITY, OTHER;
@@ -73,12 +74,12 @@ public class CustomResponseObject {
 		this.ctto = ctto;
 	}
 
-	public String getEncodedServerPublicKey() {
-		return encodedServerPublicKey;
+	public CustomPublicKey getServerPublicKey() {
+		return serverPublicKey;
 	}
 
-	public void setEncodedServerPublicKey(String encodedServerPublicKey) {
-		this.encodedServerPublicKey = encodedServerPublicKey;
+	public void setServerPublicKey(CustomPublicKey serverPublicKey) {
+		this.serverPublicKey = serverPublicKey;
 	}
 
 	public PayOutRulesTransferObject getPayOutRulesTO() {
