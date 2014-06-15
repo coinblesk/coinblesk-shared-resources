@@ -1,6 +1,5 @@
 package ch.uzh.csg.mbps.responseobject;
 
-import ch.uzh.csg.mbps.customserialization.ServerPaymentResponse;
 import ch.uzh.csg.mbps.keys.CustomPublicKey;
 
 public class CustomResponseObject {
@@ -10,7 +9,7 @@ public class CustomResponseObject {
 	private GetHistoryTransferObject ghto = null;
 	private CreateTransactionTransferObject ctto = null;
 	private PayOutRulesTransferObject porto = null;
-	private ServerPaymentResponse spr = null;
+	private byte[] serverPaymentResponse = null;
 	private String balance = null;
 	private CustomPublicKey serverPublicKey;
 	private Type type;
@@ -90,12 +89,12 @@ public class CustomResponseObject {
 		this.porto = porto;
 	}
 
-	public ServerPaymentResponse getServerPaymentResponse() {
-		return spr;
+	public byte[] getServerPaymentResponse() {
+		return serverPaymentResponse;
 	}
 
-	public void setServerPaymentResponse(ServerPaymentResponse spr) {
-		this.spr = spr;
+	public void setServerPaymentResponse(byte[] serverPaymentResponse) {
+		this.serverPaymentResponse = serverPaymentResponse;
 	}
 
 	public String getBalance() {
