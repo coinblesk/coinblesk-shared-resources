@@ -13,6 +13,7 @@ public class CustomResponseObject {
 	private String balance = null;
 	private CustomPublicKey serverPublicKey;
 	private Type type;
+	private int clientVersion;
 	
 	public enum Type {
 		LOGIN, LOGOUT, EXCHANGE_RATE, PAYOUT_RULE, HISTORY_EMAIL, AFTER_LOGIN, SAVE_PUBLIC_KEY, MAIN_ACTIVITY, CREATE_TRANSACTION, OTHER ;
@@ -111,6 +112,14 @@ public class CustomResponseObject {
 
 	public void setType(Type type) {
 		this.type = type;
+	}
+	
+	public void setClientVersion(int version) {
+		this.clientVersion = version;
+	}
+	
+	public int getClientVersion() {
+		return clientVersion;
 	}
 	
 	public String toString() {
