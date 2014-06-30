@@ -10,12 +10,23 @@ import java.util.TimeZone;
 public class HistoryServerAccountTransaction extends AbstractHistory {
 	private static final long serialVersionUID = -6411119193220293391L;
 
+	private String payinAddress;
+	
 	public HistoryServerAccountTransaction(){
 	}
 	
-	public HistoryServerAccountTransaction(Date timestamp, BigDecimal amount){
+	public HistoryServerAccountTransaction(Date timestamp, BigDecimal amount, String payinAddress){
 		this.timestamp = timestamp;
 		this.amount = amount;
+		this.payinAddress = payinAddress;
+	}
+	
+	public void setPayinAddress(String payinAddress){
+		this.payinAddress = payinAddress;
+	}
+	
+	public String getPayinAddress(){
+		return this.payinAddress;
 	}
 	
 	@Override
@@ -30,6 +41,8 @@ public class HistoryServerAccountTransaction extends AbstractHistory {
 		sb.append("ServerAccount Transaction from BTC Network: ");
 		sb.append(DisplayFormatBTC.format(getAmount()));
 		sb.append(" BTC");
+		sb.append(", Payin Address:");
+		sb.append(getPayinAddress());
 		return sb.toString();
 	}
 
