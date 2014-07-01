@@ -27,16 +27,30 @@
 		<dependency>
 			<groupId>ch.uzh.csg</groupId>
 			<artifactId>custom-serialization</artifactId>
-			<version>0.1.4</version>
+			<version>0.1.5</version>
 		</dependency>
 		
 		<!-- JUnit in order that maven can run the tests -->
 		<dependency>
 			<groupId>junit</groupId>
-			<artifactId>junit-dep</artifactId>
+			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
