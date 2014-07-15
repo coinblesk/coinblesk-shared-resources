@@ -28,8 +28,7 @@ public class HistoryPayInTransaction extends AbstractHistory {
 		sb.append(sdf.format(getTimestamp()));
 		sb.append("\n");
 		sb.append("PayIn Transaction from BTC Network: ");
-		sb.append(DisplayFormatBTC.format(getAmount()));
-		sb.append(" BTC");
+		sb.append(DisplayFormatBTC.format(getAmount()) + " BTC");
 		return sb.toString();
 	}
 	

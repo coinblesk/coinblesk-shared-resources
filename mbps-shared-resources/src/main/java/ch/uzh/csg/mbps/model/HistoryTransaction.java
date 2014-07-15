@@ -12,15 +12,19 @@ public class HistoryTransaction extends AbstractHistory {
 
 	private String buyer;
 	private String seller;
+	private String inputCurrency;
+	private BigDecimal inputCurrencyAmount;
 
 	public HistoryTransaction() {
 	}
 
-	public HistoryTransaction(Date timestamp, String buyer, String seller, BigDecimal amount) {
+	public HistoryTransaction(Date timestamp, String buyer, String seller, BigDecimal amount, String inputCurrency, BigDecimal inputCurrencyAmount) {
 		this.timestamp = timestamp;
 		this.buyer = buyer;
 		this.seller = seller;
 		this.amount = amount;
+		this.inputCurrency = inputCurrency;
+		this.inputCurrencyAmount = inputCurrencyAmount;
 	}
 
 	public String getBuyer() {
@@ -39,6 +43,22 @@ public class HistoryTransaction extends AbstractHistory {
 		this.seller = seller;
 	}
 
+	public String getInputCurrency() {
+		return inputCurrency;
+	}
+
+	public void setInputCurrency(String inputCurrency) {
+		this.inputCurrency = inputCurrency;
+	}
+
+	public BigDecimal getInputCurrencyAmount() {
+		return inputCurrencyAmount;
+	}
+
+	public void setInputCurrencyAmount(BigDecimal inputCurrencyAmount) {
+		this.inputCurrencyAmount = inputCurrencyAmount;
+	}
+
 	@Override
 	public String toString() {
 		DecimalFormat DisplayFormatBTC = new DecimalFormat("#.########");
@@ -55,6 +75,8 @@ public class HistoryTransaction extends AbstractHistory {
 		sb.append(", Amount: ");
 		sb.append(DisplayFormatBTC.format(getAmount()));
 		sb.append(" BTC");
+		sb.append(" CHF: ");
+		sb.append(getInputCurrencyAmount());
 		return sb.toString();
 	}
 }
