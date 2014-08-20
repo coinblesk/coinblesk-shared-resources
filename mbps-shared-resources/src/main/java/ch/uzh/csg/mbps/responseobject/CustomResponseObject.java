@@ -17,6 +17,7 @@ public class CustomResponseObject {
 	private GetHistoryTransferObject ghto = null;
 	private CreateTransactionTransferObject ctto = null;
 	private PayOutRulesTransferObject porto = null;
+	private ServerAccountTransferObject sato = null;
 	private byte[] serverPaymentResponse = null;
 	private String balance = null;
 	private CustomPublicKey serverPublicKey;
@@ -82,6 +83,14 @@ public class CustomResponseObject {
 		this.ctto = ctto;
 	}
 
+	public ServerAccountTransferObject getServerAccountTO() {
+		return sato;
+	}
+
+	public void setServerAccountTO(ServerAccountTransferObject sato) {
+		this.sato = sato;
+	}
+	
 	public CustomPublicKey getServerPublicKey() {
 		return serverPublicKey;
 	}
