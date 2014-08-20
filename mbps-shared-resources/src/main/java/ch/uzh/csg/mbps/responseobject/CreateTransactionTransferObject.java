@@ -2,8 +2,12 @@ package ch.uzh.csg.mbps.responseobject;
 
 import java.io.Serializable;
 
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+
 import org.apache.commons.codec.binary.Base64;
-import org.codehaus.jackson.annotate.JsonIgnore;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import ch.uzh.csg.mbps.customserialization.DecoderFactory;
 import ch.uzh.csg.mbps.customserialization.ServerPaymentRequest;
@@ -55,5 +59,14 @@ public class CreateTransactionTransferObject implements Serializable {
 		byte[] decode = Base64.decodeBase64(payloadBase64.getBytes());
 		return DecoderFactory.decode(ServerPaymentResponse.class, decode);
 	}
+
+	public void decode(String createTransactionTO) {
+		if(createTransactionTO == null) {
+			return;
+		}
+		JSONObject o = (JSONObject) JSONValue.parse(createTransactionTO);
+		String payloadBase64 = CustomResponseObject.toStringOrNull(o.get("payloadBase64"));
+		setPayload(payloadBase64);
+    }
 	
 }

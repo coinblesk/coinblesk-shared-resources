@@ -20,6 +20,12 @@ public class HistoryPayOutTransaction extends AbstractHistory {
 		this.amount = amount;
 	}
 	
+	public HistoryPayOutTransaction(Date timestamp, BigDecimal amount, String btcAddress) {
+		this.timestamp = timestamp;
+		this.amount = amount;
+		this.btcAddress = btcAddress;
+	}
+	
 	public String getBtcAddress() {
 		return btcAddress;
 	}

@@ -16,4 +16,9 @@ public class ReadAccountTransferObject {
 		return userAccount;
 	}
 
+	public void decode(String readAccountTO) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
 }

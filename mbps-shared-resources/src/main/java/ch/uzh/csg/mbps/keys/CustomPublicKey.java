@@ -51,5 +51,10 @@ public class CustomPublicKey implements Serializable {
 	public void setPublicKey(String publicKey) {
 		this.publicKey = publicKey;
 	}
+
+	public void decode(String serverPublicKey) {
+	    // TODO Auto-generated method stub
+	    
+    }
 	
 }

@@ -23,4 +23,9 @@ public class PayOutRulesTransferObject {
 		this.payOutRulesList.add(rule);
 	}
 
+	public void decode(String payOutRulesTO) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
 }

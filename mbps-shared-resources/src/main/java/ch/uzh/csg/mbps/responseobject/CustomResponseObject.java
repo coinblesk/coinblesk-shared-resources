@@ -1,5 +1,13 @@
 package ch.uzh.csg.mbps.responseobject;
 
+import java.math.BigDecimal;
+import java.text.ParseException;
+
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+
+import org.apache.commons.codec.binary.Base64;
+
 import ch.uzh.csg.mbps.keys.CustomPublicKey;
 
 public class CustomResponseObject {
@@ -130,6 +138,81 @@ public class CustomResponseObject {
 		sb.append(getMessage());
 		
 		return sb.toString();
+	}
+
+	public void decode(String responseString) throws ParseException {
+		if(responseString == null) {
+			return;
+		}
+		JSONObject o = (JSONObject) JSONValue.parse(responseString);
+		//mandatory
+    	String message = toStringOrNull(o.get("message"));
+    	String successful = toStringOrNull(o.get("successful"));
+    	String type = toStringOrNull(o.get("type"));
+    	String version = toStringOrNull(o.get("clientVersion"));
+    	//optional
+    	String balance = toStringOrNull(o.get("balance"));
+    	String serverPaymentResponse = toStringOrNull(o.get("serverPaymentResponse"));
+    	
+    	String createTransactionTO = toStringOrNull(o.get("createTransactionTO"));
+    	String getHistoryTO = toStringOrNull(o.get("getHistoryTO"));
+    	String payOutRulesTO = toStringOrNull(o.get("payOutRulesTO"));
+    	String readAccountTO = toStringOrNull(o.get("ReadAccountTO"));
+    	String serverPublicKey = toStringOrNull(o.get("serverPublicKey"));
+    	
+    	//mandatory
+    	setMessage(message);
+    	setSuccessful(Boolean.valueOf(successful));
+    	setType(Type.valueOf(type));
+    	try {
+    		setClientVersion(Integer.parseInt(version));
+    	} catch (Exception e) {
+			e.printStackTrace();
+		}
+    
+    	//optional
+    	setBalance(balance);
+    	byte[] decode = Base64.decodeBase64(serverPaymentResponse.getBytes());
+    	setServerPaymentResponse(decode);
+    	//
+    	CreateTransactionTransferObject ctto = new CreateTransactionTransferObject();
+    	ctto.decode(createTransactionTO);
+    	setCreateTransactionTO(ctto);
+    	//
+    	GetHistoryTransferObject ghto = new GetHistoryTransferObject();
+    	ghto.decode(getHistoryTO);
+    	setGetHistoryTO(ghto);
+    	//
+    	PayOutRulesTransferObject porto = new PayOutRulesTransferObject();
+    	porto.decode(payOutRulesTO);
+    	setPayOutRulesTO(porto);
+    	//
+    	ReadAccountTransferObject rato = new ReadAccountTransferObject();
+    	rato.decode(readAccountTO);
+    	setReadAccountTO(rato);
+    	//
+    	CustomPublicKey c = new CustomPublicKey();
+    	c.decode(serverPublicKey);
+    	setServerPublicKey(c);
+    }
+	
+	public static String toStringOrNull(Object o) {
+		if(o == null) {
+			return null;
+		}
+		return o.toString();
+	}
+	
+	public static BigDecimal toBigDecimalOrNull(Object o) {
+		if(o == null) {
+			return null;
+		}
+		try {
+			return new BigDecimal(o.toString());
+		} catch (NumberFormatException nfe) {
+			nfe.printStackTrace();
+			return null;
+		}
 	}
 	
 }
