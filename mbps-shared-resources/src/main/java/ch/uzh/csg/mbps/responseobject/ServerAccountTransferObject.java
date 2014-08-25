@@ -15,8 +15,9 @@ public class ServerAccountTransferObject extends TransferObject {
 	private ServerAccountTransferObject(){
 	}
 	
-	public ServerAccountTransferObject(List<ServerAccountObject> serverAccounts) {
-		serverAccountList = serverAccounts;
+	public ServerAccountTransferObject(List<ServerAccountObject> serverAccounts, Long numberofSA) {
+		this.serverAccountList = serverAccounts;
+		this.numberofSA = numberofSA;
 	}
 	
 	public List<ServerAccountObject> getServerAccountList() {
