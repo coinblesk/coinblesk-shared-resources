@@ -2,24 +2,19 @@ package ch.uzh.csg.mbps.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
 
 public class ServerAccount implements Serializable {
 	private static final long serialVersionUID = 6473930889263412427L;
 
 	private long id;
 	private String url;
-	private Date creationDate;
-	private String email;
 	private String payinAddress;
+	private String payoutAddress;
 	private int trustLevel;
-	private String publicKey;
-	private boolean deleted;
 	private BigDecimal activeBalance;
 	private BigDecimal balanceLimit;
 	
 	public ServerAccount(){
-		this.creationDate = new Date();
 	}
 	
 	public ServerAccount(String url) {
@@ -42,22 +37,6 @@ public class ServerAccount implements Serializable {
 		this.url = url;
 	}
 
-	public Date getCreationDate() {
-		return creationDate;
-	}
-
-	public void setCreationDate(Date creationDate) {
-		this.creationDate = creationDate;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
 	public String getPayinAddress() {
 		return payinAddress;
 	}
@@ -66,28 +45,20 @@ public class ServerAccount implements Serializable {
 		this.payinAddress = btcAddress;
 	}
 
+	public String getPayoutAddress() {
+		return payoutAddress;
+	}
+	
+	public void setPayoutAddress(String btcAddress) {
+		this.payoutAddress = btcAddress;
+	}
+
 	public int getTrustLevel() {
 		return trustLevel;
 	}
 
 	public void setTrustLevel(int trustLevel) {
 		this.trustLevel = trustLevel;
-	}
-
-	public String getPublicKey() {
-		return publicKey;
-	}
-
-	public void setPublicKey(String publicKey) {
-		this.publicKey = publicKey;
-	}
-
-	public boolean isDeleted() {
-		return deleted;
-	}
-
-	public void setDeleted(boolean deleted) {
-		this.deleted = deleted;
 	}
 
 	public BigDecimal getActiveBalance() {
@@ -113,14 +84,10 @@ public class ServerAccount implements Serializable {
 		sb.append(getId());
 		sb.append(", url: ");
 		sb.append(getUrl());
-		sb.append(", email: ");
-		sb.append(getEmail());
-		sb.append(", isDeleted: ");
-		sb.append(isDeleted());
-		sb.append(", creationDate: ");
-		sb.append(getCreationDate());
 		sb.append(", active balance: ");
 		sb.append(getActiveBalance());
+		sb.append(", balance limit: ");
+		sb.append(getBalanceLimit());
 		sb.append(", trust level: ");
 		sb.append(getTrustLevel());
 		return sb.toString();
