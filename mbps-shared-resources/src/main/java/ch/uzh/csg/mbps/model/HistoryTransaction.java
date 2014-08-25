@@ -6,6 +6,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import net.minidev.json.JSONObject;
+import ch.uzh.csg.mbps.responseobject.TransferObject;
 
 public class HistoryTransaction extends AbstractHistory {
 	private static final long serialVersionUID = 7710423735485262156L;
@@ -79,4 +84,47 @@ public class HistoryTransaction extends AbstractHistory {
 		sb.append(getInputCurrencyAmount());
 		return sb.toString();
 	}
+	
+	public void encode(JSONObject o) {
+		super.encode(o);
+		if(buyer!=null) {
+			o.put("buyer", buyer);
+		}
+		if(seller!=null) {
+			o.put("seller", seller);
+		}
+		if(inputCurrency!=null && inputCurrencyAmount!=null) {
+			o.put("inputCurrency", inputCurrencyAmount + inputCurrency);
+		}
+    }
+	
+	
+
+	public void decode(JSONObject o) {
+		super.decode(o);
+		setBuyer(TransferObject.toStringOrNull(o.get("buyer")));
+		setSeller(TransferObject.toStringOrNull(o.get("seller")));
+		
+		String s = TransferObject.toStringOrNull(o.get("inputCurrency"));
+		if(s!=null) {
+			Pattern pattern = Pattern.compile("[A-Za-z]");
+			Matcher matcher = pattern.matcher(s);
+			if(matcher.find()) {
+				int start = matcher.start();
+				if(start >= 0) {
+					String number = s.substring(0, start);
+					String currentry = s.substring(start);
+					
+					try {
+						//TODO: scale
+						setInputCurrencyAmount(new BigDecimal(number));
+						setInputCurrency(currentry);
+					} catch (NumberFormatException nfe) {
+						setInputCurrencyAmount(BigDecimal.ZERO);
+						setInputCurrency("ERR");
+					}
+				}
+			}
+		}
+    }
 }

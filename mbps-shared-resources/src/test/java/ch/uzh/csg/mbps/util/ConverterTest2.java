@@ -1,31 +1,22 @@
 package ch.uzh.csg.mbps.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ConverterTest {
-
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-	}
-
-	@Before
-	public void setUp() throws Exception {
-	}
-
-	@After
-	public void tearDown() throws Exception {
+public class ConverterTest2 {
+	
+	@Test
+	public void testGetLongFromString() {
+		BigDecimal orig = new BigDecimal("20999999.97690000");
+		BigDecimal conv =  Converter.getBigDecimalFromString("20999999.97690000");
+		assertEquals(orig, conv);
+		BigDecimal conv1 =  Converter.getBigDecimalFromString("20999999.976900001");
+		assertEquals(orig, conv1);
+		BigDecimal conv2 =  Converter.getBigDecimalFromString("20999999.976899999");
+		assertEquals(orig, conv2);
 	}
 
 	@Test
@@ -33,12 +24,12 @@ public class ConverterTest {
 		// 1000000 = 0.01 btc
 		long l = 1000000;
 		BigDecimal bigDecimalFromLong = Converter.getBigDecimalFromLong(l);
-		assertEquals("0.01", bigDecimalFromLong.toString());
+		assertEquals("0.01000000", bigDecimalFromLong.toString());
 		
 		// 100000000 = 1 btc
 		l = 100000000;
 		bigDecimalFromLong = Converter.getBigDecimalFromLong(l);
-		assertEquals("1", bigDecimalFromLong.toString());
+		assertEquals("1.00000000", bigDecimalFromLong.toString());
 		
 		// 1 = 0.00000001 btc
 		l = 1;
@@ -63,7 +54,7 @@ public class ConverterTest {
 		longFromBigDecimal = Converter.getLongFromBigDecimal(bd);
 		assertEquals(100000000, longFromBigDecimal);
 		
-		// 0.00000001 btc = 1
+		// 0.00000001 btc = 1 satoshi -> this is the minimum
 		bd = new BigDecimal("0.00000001");
 		longFromBigDecimal = Converter.getLongFromBigDecimal(bd);
 		assertEquals(1, longFromBigDecimal);
@@ -72,6 +63,15 @@ public class ConverterTest {
 		bd = new BigDecimal("100000000.00000001");
 		longFromBigDecimal = Converter.getLongFromBigDecimal(bd);
 		assertEquals(10000000000000001L, longFromBigDecimal);
+		
+		//https://en.bitcoin.it/wiki/Bitcoin
+		//maximum 2,099,999,997,690,000 satoshis
+		bd = new BigDecimal("20999999.97690000"); // maxvalue
+		longFromBigDecimal = Converter.getLongFromBigDecimal(bd);
+		assertEquals(2099999997690000L, longFromBigDecimal);
+		BigDecimal bd2 = Converter.getBigDecimalFromLong(longFromBigDecimal);
+		assertEquals(bd, bd2);
 	}
-
+	
+	
 }

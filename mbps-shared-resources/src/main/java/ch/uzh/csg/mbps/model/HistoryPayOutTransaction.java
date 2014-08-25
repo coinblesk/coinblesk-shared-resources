@@ -7,6 +7,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import net.minidev.json.JSONObject;
+import ch.uzh.csg.mbps.responseobject.TransferObject;
+
 public class HistoryPayOutTransaction extends AbstractHistory {
 	private static final long serialVersionUID = -8543354282567109155L;
 
@@ -49,5 +52,19 @@ public class HistoryPayOutTransaction extends AbstractHistory {
 		sb.append(getBtcAddress());
 		return sb.toString();
 	}
+	
+	public void encode(JSONObject o) {
+		super.encode(o);
+		if(btcAddress!=null) {
+			o.put("btcAddress", btcAddress);
+		}
+    }
+	
+	
+
+	public void decode(JSONObject o) {
+		super.decode(o);
+		setBtcAddress(TransferObject.toStringOrNull(o.get("btcAddress")));
+    }
 	
 }

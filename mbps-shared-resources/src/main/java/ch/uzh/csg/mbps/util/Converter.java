@@ -1,6 +1,7 @@
 package ch.uzh.csg.mbps.util;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * This class offers the functionality to convert BTC amounts in BigDecimal
@@ -16,7 +17,7 @@ public class Converter {
 	public static BigDecimal getBigDecimalFromLong(long longValue){
 		BigDecimal bigDecimalValue = new BigDecimal(longValue);
 		BigDecimal result = bigDecimalValue.divide(new BigDecimal(100000000));
-		return result;
+		return result.setScale(8, RoundingMode.HALF_UP);
 	}
 	
 	/**
@@ -25,7 +26,12 @@ public class Converter {
 	 */
 	public static long getLongFromBigDecimal(BigDecimal bigDecimalValue){
 		BigDecimal result = bigDecimalValue.multiply(new BigDecimal(100000000));
-		return result.longValue();
+		return result.setScale(8, RoundingMode.HALF_UP).longValue();
+	}
+	
+	public static BigDecimal getBigDecimalFromString(String stringValue) {
+		BigDecimal result = new BigDecimal(stringValue);
+		return result.setScale(8, RoundingMode.HALF_UP);
 	}
 
 }

@@ -1,7 +1,6 @@
 package ch.uzh.csg.mbps.responseobject;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,18 +11,15 @@ import ch.uzh.csg.mbps.model.HistoryPayInTransaction;
 import ch.uzh.csg.mbps.model.HistoryPayOutTransaction;
 import ch.uzh.csg.mbps.model.HistoryTransaction;
 
-public class GetHistoryTransferObject {
-	
-	//TODO: check if correct format, just picked one
-	private final static SimpleDateFormat parserSDF=new SimpleDateFormat("EEE MMM d HH:mm:ss zzz yyyy");
+public class GetHistoryTransferObject extends TransferObject {
 	
 	private List<HistoryTransaction> transactionHistory;
 	private List<HistoryPayInTransaction> payInTransactionHistory;
 	private List<HistoryPayOutTransaction> payOutTransactionHistory;
 	
-	private long nofTransactions;
-	private long nofPayInTransactions;
-	private long nofPayOutTransactions;
+	private Long nofTransactions;
+	private Long nofPayInTransactions;
+	private Long nofPayOutTransactions;
 	
 	public GetHistoryTransferObject() {
 	}
@@ -31,9 +27,9 @@ public class GetHistoryTransferObject {
 	public GetHistoryTransferObject(List<HistoryTransaction> transactions,
 			List<HistoryPayInTransaction> payInTransactions,
 			List<HistoryPayOutTransaction> payOutTransactions,
-			long nofTransactions,
-			long nofPayInTransactions,
-			long nofPayOutTransactions) {
+			Long nofTransactions,
+			Long nofPayInTransactions,
+			Long nofPayOutTransactions) {
 		this.transactionHistory = transactions;
 		this.payInTransactionHistory = payInTransactions;
 		this.payOutTransactionHistory = payOutTransactions;
@@ -66,64 +62,53 @@ public class GetHistoryTransferObject {
 		this.payOutTransactionHistory = payOutTransactionHistory;
 	}
 	
-	public long getNofTransactions() {
+	public Long getNofTransactions() {
 		return nofTransactions;
 	}
 
-	public void setNofTransactions(long nofTransactions) {
+	public void setNofTransactions(Long nofTransactions) {
 		this.nofTransactions = nofTransactions;
 	}
 
-	public long getNofPayInTransactions() {
+	public Long getNofPayInTransactions() {
 		return nofPayInTransactions;
 	}
 
-	public void setNofPayInTransactions(long nofPayInTransactions) {
+	public void setNofPayInTransactions(Long nofPayInTransactions) {
 		this.nofPayInTransactions = nofPayInTransactions;
 	}
 
-	public long getNofPayOutTransactions() {
+	public Long getNofPayOutTransactions() {
 		return nofPayOutTransactions;
 	}
 
-	public void setNofPayOutTransactions(long nofPayOutTransactions) {
+	public void setNofPayOutTransactions(Long nofPayOutTransactions) {
 		this.nofPayOutTransactions = nofPayOutTransactions;
 	}
+	
+	@Override
+	public JSONObject decode(String responseString) throws Exception {
+		if(responseString == null) {
+			return null;
+		}
+		super.decode(responseString);
+		JSONObject o = (JSONObject) JSONValue.parse(responseString);
+		decode(o);
+		return o;
+	}
 
-	public void decode(String getHistoryTO) throws ParseException {
-		if(getHistoryTO == null) {
-			return;
-		}
-		JSONObject o = (JSONObject) JSONValue.parse(getHistoryTO);
-		String nofTransactions = CustomResponseObject.toStringOrNull(o.get("nofTransactions"));
-		String nofPayInTransactions = CustomResponseObject.toStringOrNull(o.get("nofPayInTransactions"));
-		String nofPayOutTransactions = CustomResponseObject.toStringOrNull(o.get("nofPayOutTransactions"));
-		
-		try {
-			setNofTransactions(Long.parseLong(nofTransactions));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		try {
-			setNofPayInTransactions(Long.parseLong(nofPayInTransactions));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		try {
-			setNofPayOutTransactions(Long.parseLong(nofPayOutTransactions));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void decode(JSONObject o) throws ParseException {
+				
+		setNofTransactions(toLongOrNull(o.get("nofTransactions")));
+		setNofPayInTransactions(toLongOrNull(o.get("nofPayInTransactions")));
+		setNofPayOutTransactions(toLongOrNull(o.get("nofPayOutTransactions")));
 		
 		JSONArray array1 = (JSONArray) o.get("transactionHistory");
 		ArrayList<HistoryTransaction> transactionHistory = new ArrayList<HistoryTransaction>();
 		for(Object o2:array1) {
 			JSONObject o3 = (JSONObject) o2;
 			HistoryTransaction h1 = new HistoryTransaction();
-			h1.setBuyer(CustomResponseObject.toStringOrNull(o3.get("buyer")));
-			h1.setSeller(CustomResponseObject.toStringOrNull(o3.get("seller")));
-			h1.setInputCurrency(CustomResponseObject.toStringOrNull(o3.get("inputCurrency")));
-			h1.setInputCurrencyAmount(CustomResponseObject.toBigDecimalOrNull(o3.get("inputCurrencyAmount")));
+			h1.decode(o3);
 			transactionHistory.add(h1);
 		}
 		setTransactionHistory(transactionHistory);
@@ -133,8 +118,7 @@ public class GetHistoryTransferObject {
 		for(Object o2:array2) {
 			JSONObject o3 = (JSONObject) o2;
 			HistoryPayInTransaction h1 = new HistoryPayInTransaction();
-			h1.setAmount(CustomResponseObject.toBigDecimalOrNull(o3.get("amount")));
-			h1.setTimestamp(parserSDF.parse(o3.get("timestamp").toString()));
+			h1.decode(o3);
 			payInTransactionHistory.add(h1);
 		}
 		setPayInTransactionHistory(payInTransactionHistory);
@@ -144,12 +128,51 @@ public class GetHistoryTransferObject {
 		for(Object o2:array3) {
 			JSONObject o3 = (JSONObject) o2;
 			HistoryPayOutTransaction h1 = new HistoryPayOutTransaction();
-			h1.setAmount(CustomResponseObject.toBigDecimalOrNull(o3.get("amount")));
-			h1.setTimestamp(parserSDF.parse(o3.get("timestamp").toString()));
-			h1.setBtcAddress(o3.get("btcAddress").toString());
+			h1.decode(o3);
 			payOutTransactionHistory.add(h1);
 		}
 		setPayOutTransactionHistory(payOutTransactionHistory);
     }
+	
+	@Override
+	public void encode(JSONObject jsonObject) throws Exception {
+		super.encode(jsonObject);
+		encodeThis(jsonObject);
+	}
 
+	public void encodeThis(JSONObject jsonObject) {
+		if(nofTransactions!=null) {
+			jsonObject.put("nofTransactions", nofTransactions);
+		}
+		if(nofPayInTransactions!=null) {
+			jsonObject.put("nofPayInTransactions", nofPayInTransactions);
+		}
+		if(nofPayOutTransactions!=null) {
+			jsonObject.put("nofPayOutTransactions", nofPayOutTransactions);
+		}
+		
+		JSONArray array1 = new JSONArray();
+		for(HistoryTransaction h: transactionHistory) {
+			JSONObject o = new JSONObject();
+			h.encode(o);
+			array1.add(o);
+		}
+		jsonObject.put("transactionHistory", array1);
+		
+		JSONArray array2 = new JSONArray();
+		for(HistoryPayInTransaction h: payInTransactionHistory) {
+			JSONObject o = new JSONObject();
+			h.encode(o);
+			array2.add(o);
+		}
+		jsonObject.put("payInTransactionHistory", array2);
+		
+		JSONArray array3 = new JSONArray();
+		for(HistoryPayOutTransaction h: payOutTransactionHistory) {
+			JSONObject o = new JSONObject();
+			h.encode(o);
+			array3.add(o);
+		}
+		jsonObject.put("payOutTransactionHistory", array3);    
+    }
 }

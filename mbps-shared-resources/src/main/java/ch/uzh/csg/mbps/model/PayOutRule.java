@@ -3,12 +3,15 @@ package ch.uzh.csg.mbps.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import ch.uzh.csg.mbps.responseobject.TransferObject;
+import net.minidev.json.JSONObject;
+
 public class PayOutRule implements Serializable {
 	private static final long serialVersionUID = -2152344591629765535L;
 
-	private int hour;
-	private int day;
-	private long userId;
+	private Integer hour;
+	private Integer day;
+	private Long userId;
 	private BigDecimal balanceLimit;
 	private String payoutAddress;
 
@@ -28,35 +31,35 @@ public class PayOutRule implements Serializable {
 		this.hour = hour;
 	}
 
-	public int getHour() {
+	public Integer getHour() {
 		return hour;
 	}
 
-	public void setHour(int hour) {
+	public void setHour(Integer hour) {
 		this.hour = hour;
 	}
 
-	public int getDay() {
+	public Integer getDay() {
 		return day;
 	}
 
-	public void setDay(int day) {
+	public void setDay(Integer day) {
 		this.day = day;
 	}
 
-	public long getUserId() {
+	public Long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(long userId) {
+	public void setUserId(Long userId) {
 		this.userId = userId;
 	}
 
-	public BigDecimal getBalanceLimit() {
+	public BigDecimal getBalanceLimitBTC() {
 		return balanceLimit;
 	}
 
-	public void setBalanceLimit(BigDecimal balanceLimit) {
+	public void setBalanceLimitBTC(BigDecimal balanceLimit) {
 		this.balanceLimit = balanceLimit;
 	}
 
@@ -80,7 +83,28 @@ public class PayOutRule implements Serializable {
 		sb.append(" payoutAddress: ");
 		sb.append(getPayoutAddress());
 		sb.append(" balanceLimit: ");
-		sb.append(getBalanceLimit());
+		sb.append(getBalanceLimitBTC());
 		return sb.toString();
 	}
+
+	public void encode(JSONObject o) {
+		if(hour!=null) {
+			o.put("hour", hour);
+		}
+		if(day!=null) {
+			o.put("day", day);
+		}
+		if(balanceLimit!=null) {
+			o.put("balanceLimit", balanceLimit + "BTC");
+		}
+	    o.put("payoutAddress", payoutAddress);
+	    //userId never sent like this over the network
+    }
+
+	public void decode(JSONObject o) {
+		setHour(TransferObject.toIntOrNull(o.get("hour")));
+		setDay(TransferObject.toIntOrNull(o.get("day")));
+		setBalanceLimitBTC(TransferObject.toBigDecimalOrNull(o.get("balanceLimit")));
+		setPayoutAddress(TransferObject.toStringOrNull(o.get("payoutAddress")));
+    }
 }
