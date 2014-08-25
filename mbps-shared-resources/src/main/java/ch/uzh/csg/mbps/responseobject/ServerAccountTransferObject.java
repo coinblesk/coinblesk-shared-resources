@@ -13,7 +13,7 @@ public class ServerAccountTransferObject extends TransferObject {
 	private List<ServerAccount> serverAccountList;
 	private Long numberofSA;
 	
-	private ServerAccountTransferObject(){
+	public ServerAccountTransferObject(){
 	}
 	
 	public ServerAccountTransferObject(List<ServerAccount> serverAccounts, Long numberofSA) {
