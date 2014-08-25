@@ -102,34 +102,41 @@ public class GetHistoryTransferObject extends TransferObject {
 		setNofTransactions(toLongOrNull(o.get("nofTransactions")));
 		setNofPayInTransactions(toLongOrNull(o.get("nofPayInTransactions")));
 		setNofPayOutTransactions(toLongOrNull(o.get("nofPayOutTransactions")));
-		
-		JSONArray array1 = (JSONArray) o.get("transactionHistory");
+
+		JSONArray array1 = toJSONArrayOrNull(o.get("transactionHistory"));
 		ArrayList<HistoryTransaction> transactionHistory = new ArrayList<HistoryTransaction>();
-		for(Object o2:array1) {
-			JSONObject o3 = (JSONObject) o2;
-			HistoryTransaction h1 = new HistoryTransaction();
-			h1.decode(o3);
-			transactionHistory.add(h1);
+		if(array1!=null) {
+			for(Object o2:array1) {
+				JSONObject o3 = (JSONObject) o2;
+				HistoryTransaction h1 = new HistoryTransaction();
+				h1.decode(o3);
+				transactionHistory.add(h1);
+			}
 		}
 		setTransactionHistory(transactionHistory);
 		
-		JSONArray array2 = (JSONArray) o.get("payInTransactionHistory");
+
+		JSONArray array2 = toJSONArrayOrNull(o.get("payInTransactionHistory"));
 		ArrayList<HistoryPayInTransaction> payInTransactionHistory = new ArrayList<HistoryPayInTransaction>();
-		for(Object o2:array2) {
-			JSONObject o3 = (JSONObject) o2;
-			HistoryPayInTransaction h1 = new HistoryPayInTransaction();
-			h1.decode(o3);
-			payInTransactionHistory.add(h1);
+		if(array2!=null) {
+			for(Object o2:array2) {
+				JSONObject o3 = (JSONObject) o2;
+				HistoryPayInTransaction h1 = new HistoryPayInTransaction();
+				h1.decode(o3);
+				payInTransactionHistory.add(h1);
+			}
 		}
 		setPayInTransactionHistory(payInTransactionHistory);
 		
-		JSONArray array3 = (JSONArray) o.get("payOutTransactionHistory");
+		JSONArray array3 = toJSONArrayOrNull(o.get("payOutTransactionHistory"));
 		ArrayList<HistoryPayOutTransaction> payOutTransactionHistory = new ArrayList<HistoryPayOutTransaction>();
-		for(Object o2:array3) {
-			JSONObject o3 = (JSONObject) o2;
-			HistoryPayOutTransaction h1 = new HistoryPayOutTransaction();
-			h1.decode(o3);
-			payOutTransactionHistory.add(h1);
+		if(array3!=null) {
+			for(Object o2:array3) {
+				JSONObject o3 = (JSONObject) o2;
+				HistoryPayOutTransaction h1 = new HistoryPayOutTransaction();
+				h1.decode(o3);
+				payOutTransactionHistory.add(h1);
+			}
 		}
 		setPayOutTransactionHistory(payOutTransactionHistory);
     }
@@ -151,28 +158,34 @@ public class GetHistoryTransferObject extends TransferObject {
 			jsonObject.put("nofPayOutTransactions", nofPayOutTransactions);
 		}
 		
-		JSONArray array1 = new JSONArray();
-		for(HistoryTransaction h: transactionHistory) {
-			JSONObject o = new JSONObject();
-			h.encode(o);
-			array1.add(o);
+		if(transactionHistory != null) {
+			JSONArray array1 = new JSONArray();
+			for(HistoryTransaction h: transactionHistory) {
+				JSONObject o = new JSONObject();
+				h.encode(o);
+				array1.add(o);
+			}
+			jsonObject.put("transactionHistory", array1);
 		}
-		jsonObject.put("transactionHistory", array1);
 		
-		JSONArray array2 = new JSONArray();
-		for(HistoryPayInTransaction h: payInTransactionHistory) {
-			JSONObject o = new JSONObject();
-			h.encode(o);
-			array2.add(o);
+		if(payInTransactionHistory != null) {
+			JSONArray array2 = new JSONArray();
+			for(HistoryPayInTransaction h: payInTransactionHistory) {
+				JSONObject o = new JSONObject();
+				h.encode(o);
+				array2.add(o);
+			}
+			jsonObject.put("payInTransactionHistory", array2);
 		}
-		jsonObject.put("payInTransactionHistory", array2);
 		
-		JSONArray array3 = new JSONArray();
-		for(HistoryPayOutTransaction h: payOutTransactionHistory) {
-			JSONObject o = new JSONObject();
-			h.encode(o);
-			array3.add(o);
+		if(payOutTransactionHistory != null) {
+			JSONArray array3 = new JSONArray();
+			for(HistoryPayOutTransaction h: payOutTransactionHistory) {
+				JSONObject o = new JSONObject();
+				h.encode(o);
+				array3.add(o);
+			}
+			jsonObject.put("payOutTransactionHistory", array3);
 		}
-		jsonObject.put("payOutTransactionHistory", array3);    
     }
 }
