@@ -2,15 +2,20 @@ package ch.uzh.csg.mbps.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Date;
 
 public class ServerAccount implements Serializable {
 	private static final long serialVersionUID = 6473930889263412427L;
 
 	private long id;
 	private String url;
+	private Date creationDate;
+	private String email;
 	private String payinAddress;
 	private String payoutAddress;
 	private int trustLevel;
+	private String publicKey;
+	private boolean deleted;
 	private BigDecimal activeBalance;
 	private BigDecimal balanceLimit;
 	
@@ -29,12 +34,28 @@ public class ServerAccount implements Serializable {
 		this.id = id;
 	}
 
+	public Date getCreationDate() {
+		return creationDate;
+	}
+
+	public void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
+	}
+	
 	public String getUrl() {
 		return url;
 	}
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+	
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getPayinAddress() {
@@ -60,6 +81,22 @@ public class ServerAccount implements Serializable {
 	public void setTrustLevel(int trustLevel) {
 		this.trustLevel = trustLevel;
 	}
+	
+	public String getPublicKey() {
+		return publicKey;
+	}
+
+	public void setPublicKey(String publicKey) {
+		this.publicKey = publicKey;
+	}
+	
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
+	}
 
 	public BigDecimal getActiveBalance() {
 		return activeBalance;
@@ -82,14 +119,20 @@ public class ServerAccount implements Serializable {
 		StringBuilder sb = new StringBuilder();
 		sb.append("id: ");
 		sb.append(getId());
+		sb.append(", creationDate: ");
+		sb.append(getCreationDate());
 		sb.append(", url: ");
 		sb.append(getUrl());
+		sb.append(", email: ");
+		sb.append(getEmail());
 		sb.append(", active balance: ");
 		sb.append(getActiveBalance());
 		sb.append(", balance limit: ");
 		sb.append(getBalanceLimit());
 		sb.append(", trust level: ");
 		sb.append(getTrustLevel());
+		sb.append(", isDeleted: ");
+		sb.append(isDeleted());
 		return sb.toString();
 	}
 }
