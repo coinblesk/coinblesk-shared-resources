@@ -7,24 +7,25 @@ import java.util.List;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
+import ch.uzh.csg.mbps.model.ServerAccount;
 
 public class ServerAccountTransferObject extends TransferObject {
-	private List<ServerAccountObject> serverAccountList;
+	private List<ServerAccount> serverAccountList;
 	private Long numberofSA;
 	
 	private ServerAccountTransferObject(){
 	}
 	
-	public ServerAccountTransferObject(List<ServerAccountObject> serverAccounts, Long numberofSA) {
+	public ServerAccountTransferObject(List<ServerAccount> serverAccounts, Long numberofSA) {
 		this.serverAccountList = serverAccounts;
 		this.numberofSA = numberofSA;
 	}
 	
-	public List<ServerAccountObject> getServerAccountList() {
+	public List<ServerAccount> getServerAccountList() {
 		return serverAccountList;
 	}
 
-	public void setServerAccountList(List<ServerAccountObject> list) {
+	public void setServerAccountList(List<ServerAccount> list) {
 		this.serverAccountList = list;
 	}
 	
@@ -50,14 +51,15 @@ public class ServerAccountTransferObject extends TransferObject {
 	private void decode(JSONObject o) throws ParseException {
 		setNumberOfSA(toLongOrNull(o.get("numberofSA")));
 		
-		JSONArray array = (JSONArray) o.get("serverAccountList");
-		ArrayList<ServerAccountObject> serverAccount = new ArrayList<ServerAccountObject>();
-		for(Object o2:array) {
-			JSONObject o3 = (JSONObject) o2;
-			ServerAccountObject sa = new ServerAccountObject();
-			sa.decode(o3);
-			
-			serverAccount.add(sa);
+		JSONArray array = toJSONArrayOrNull(o.get("serverAccountList"));
+		ArrayList<ServerAccount> serverAccount = new ArrayList<ServerAccount>();
+		if(array!=null){	
+			for(Object o2:array) {
+				JSONObject o3 = (JSONObject) o2;
+				ServerAccount sa = new ServerAccount();
+				sa.decode(o3);
+				serverAccount.add(sa);
+			}
 		}
 		setServerAccountList(serverAccount);
 	}
@@ -73,12 +75,14 @@ public class ServerAccountTransferObject extends TransferObject {
 			jsonObject.put("numberofSA", numberofSA);
 		}
 		
-		JSONArray array = new JSONArray();
-		for(ServerAccountObject sa: serverAccountList) {
-			JSONObject o = new JSONObject();
-			sa.encode(o);
-			array.add(o);
+		if(serverAccountList!=null){			
+			JSONArray array = new JSONArray();
+			for(ServerAccount sa: serverAccountList) {
+				JSONObject o = new JSONObject();
+				sa.encode(o);
+				array.add(o);
+			}
+			jsonObject.put("serverAccountList", array); 
 		}
-		jsonObject.put("serverAccountList", array); 
     }
 }
