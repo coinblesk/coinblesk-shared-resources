@@ -59,8 +59,6 @@ public class HistoryPayOutTransaction extends AbstractHistory {
 			o.put("btcAddress", btcAddress);
 		}
     }
-	
-	
 
 	public void decode(JSONObject o) {
 		super.decode(o);

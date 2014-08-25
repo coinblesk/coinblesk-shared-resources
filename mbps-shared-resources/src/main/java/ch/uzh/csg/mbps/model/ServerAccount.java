@@ -2,20 +2,18 @@ package ch.uzh.csg.mbps.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
+
+import net.minidev.json.JSONObject;
+import ch.uzh.csg.mbps.responseobject.TransferObject;
 
 public class ServerAccount implements Serializable {
 	private static final long serialVersionUID = 6473930889263412427L;
 
-	private long id;
+	private Long id;
 	private String url;
-	private Date creationDate;
-	private String email;
 	private String payinAddress;
 	private String payoutAddress;
-	private int trustLevel;
-	private String publicKey;
-	private boolean deleted;
+	private Integer trustLevel;
 	private BigDecimal activeBalance;
 	private BigDecimal balanceLimit;
 	
@@ -26,22 +24,14 @@ public class ServerAccount implements Serializable {
 		this.url = url;
 	}
 
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public Date getCreationDate() {
-		return creationDate;
-	}
-
-	public void setCreationDate(Date creationDate) {
-		this.creationDate = creationDate;
-	}
-	
 	public String getUrl() {
 		return url;
 	}
@@ -49,15 +39,6 @@ public class ServerAccount implements Serializable {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
 	public String getPayinAddress() {
 		return payinAddress;
 	}
@@ -74,28 +55,12 @@ public class ServerAccount implements Serializable {
 		this.payoutAddress = btcAddress;
 	}
 
-	public int getTrustLevel() {
+	public Integer getTrustLevel() {
 		return trustLevel;
 	}
 
-	public void setTrustLevel(int trustLevel) {
+	public void setTrustLevel(Integer trustLevel) {
 		this.trustLevel = trustLevel;
-	}
-	
-	public String getPublicKey() {
-		return publicKey;
-	}
-
-	public void setPublicKey(String publicKey) {
-		this.publicKey = publicKey;
-	}
-	
-	public boolean isDeleted() {
-		return deleted;
-	}
-
-	public void setDeleted(boolean deleted) {
-		this.deleted = deleted;
 	}
 
 	public BigDecimal getActiveBalance() {
@@ -119,20 +84,49 @@ public class ServerAccount implements Serializable {
 		StringBuilder sb = new StringBuilder();
 		sb.append("id: ");
 		sb.append(getId());
-		sb.append(", creationDate: ");
-		sb.append(getCreationDate());
 		sb.append(", url: ");
 		sb.append(getUrl());
-		sb.append(", email: ");
-		sb.append(getEmail());
 		sb.append(", active balance: ");
 		sb.append(getActiveBalance());
 		sb.append(", balance limit: ");
 		sb.append(getBalanceLimit());
 		sb.append(", trust level: ");
 		sb.append(getTrustLevel());
-		sb.append(", isDeleted: ");
-		sb.append(isDeleted());
 		return sb.toString();
 	}
+
+	public void encode(JSONObject o) {
+		if(id!=null) {
+			o.put("id",id);
+		}
+		if(url!=null){
+			o.put("url",url);
+		}
+		if(payinAddress!=null){
+			o.put("payinAddress",payinAddress);
+		}
+		if(payoutAddress!=null){
+			o.put("payoutAddress",payoutAddress);
+		}
+		if(trustLevel!=null){
+			o.put("trustLevel", trustLevel);
+		}
+		if(activeBalance!=null){
+			o.put("activeBalance", activeBalance);
+		}
+		if(balanceLimit!=null){
+			o.put("balanceLimit", balanceLimit);
+		}
+    }
+	
+	public void decode(JSONObject o) {
+		setId(TransferObject.toLongOrNull(o.get("id")));
+		setUrl(TransferObject.toStringOrNull(o.get("url")));
+		setPayinAddress(TransferObject.toStringOrNull(o.get("payinAddress")));
+		setPayoutAddress(TransferObject.toStringOrNull(o.get("payoutAddress")));
+		setTrustLevel(TransferObject.toIntOrNull(o.get("trustLevel")));
+		setActiveBalance(TransferObject.toBigDecimalOrNull(o.get("activeBalance")));
+		setBalanceLimit(TransferObject.toBigDecimalOrNull(o.get("balanceLimit")));
+    }
+	
 }
