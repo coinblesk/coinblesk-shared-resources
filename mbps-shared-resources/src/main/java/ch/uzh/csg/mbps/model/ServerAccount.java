@@ -20,6 +20,17 @@ public class ServerAccount implements Serializable {
 	public ServerAccount(){
 	}
 	
+	public ServerAccount(Long id, String url, String payinAddress, String payoutAddress, Integer trustLevel,
+			BigDecimal activeBalance, BigDecimal balanceLimit){
+		this.id = id;
+		this.url = url;
+		this.payinAddress = payinAddress;
+		this.payoutAddress = payoutAddress;
+		this.trustLevel = trustLevel;
+		this.activeBalance = activeBalance;
+		this.balanceLimit = balanceLimit;
+	}
+	
 	public ServerAccount(String url) {
 		this.url = url;
 	}
