@@ -16,7 +16,7 @@ public class TransferObject {
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	public enum Status {
-		REQUEST, REPLY_SUCCESS, REPLY_FAILED
+		REQUEST, REPLY_SUCCESS, REPLY_FAILED, UNAUTHORIZED;
 	}
 
 	private Status status = Status.REQUEST;
@@ -29,6 +29,14 @@ public class TransferObject {
 
 	public void setSuccessful(boolean successful) {
 		this.status = successful ? Status.REPLY_SUCCESS : Status.REPLY_FAILED;
+	}
+	
+	public void setUnauthorized() {
+		this.status = Status.UNAUTHORIZED;
+	}
+	
+	public boolean isUnauthorized() {
+		return status == Status.UNAUTHORIZED;
 	}
 
 	public String getMessage() {
@@ -175,4 +183,5 @@ public class TransferObject {
 	public static String encodeToString(Date timestamp) {
 		return DATE_FORMAT.format(timestamp);
     }
+	
 }
