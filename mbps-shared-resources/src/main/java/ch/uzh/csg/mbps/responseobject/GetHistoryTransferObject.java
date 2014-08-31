@@ -15,10 +15,12 @@ public class GetHistoryTransferObject extends TransferObject {
 	
 	private List<HistoryTransaction> transactionHistory;
 	private List<HistoryPayInTransaction> payInTransactionHistory;
+	private List<HistoryPayInTransaction> payInTransactionUnverifiedHistory;
 	private List<HistoryPayOutTransaction> payOutTransactionHistory;
 	
 	private Long nofTransactions;
 	private Long nofPayInTransactions;
+	private Long nofPayInTransactionsUnverified;
 	private Long nofPayOutTransactions;
 	
 	public GetHistoryTransferObject() {
@@ -26,15 +28,19 @@ public class GetHistoryTransferObject extends TransferObject {
 	
 	public GetHistoryTransferObject(List<HistoryTransaction> transactions,
 			List<HistoryPayInTransaction> payInTransactions,
+			List<HistoryPayInTransaction> payInTransactionUnverifiedHistory,
 			List<HistoryPayOutTransaction> payOutTransactions,
 			Long nofTransactions,
 			Long nofPayInTransactions,
+			Long nofPayInTransactionsUnverified,
 			Long nofPayOutTransactions) {
 		this.transactionHistory = transactions;
 		this.payInTransactionHistory = payInTransactions;
+		this.payInTransactionUnverifiedHistory = payInTransactionUnverifiedHistory;
 		this.payOutTransactionHistory = payOutTransactions;
 		this.nofTransactions = nofTransactions;
 		this.nofPayInTransactions = nofPayInTransactions;
+		this.nofPayInTransactionsUnverified = nofPayInTransactionsUnverified;
 		this.nofPayOutTransactions = nofPayOutTransactions;
 	}
 
@@ -53,6 +59,16 @@ public class GetHistoryTransferObject extends TransferObject {
 	public void setPayInTransactionHistory(List<HistoryPayInTransaction> payInTransactionHistory) {
 		this.payInTransactionHistory = payInTransactionHistory;
 	}
+	
+	
+	public List<HistoryPayInTransaction> getPayInTransactionUnverifiedHistory() {
+		return payInTransactionUnverifiedHistory;
+	}
+
+	public void setPayInTransactionUnverifiedHistory(List<HistoryPayInTransaction> payInTransactionUnverifiedHistory) {
+		this.payInTransactionUnverifiedHistory = payInTransactionUnverifiedHistory;
+	}
+	
 
 	public List<HistoryPayOutTransaction> getPayOutTransactionHistory() {
 		return payOutTransactionHistory;
@@ -76,6 +92,14 @@ public class GetHistoryTransferObject extends TransferObject {
 
 	public void setNofPayInTransactions(Long nofPayInTransactions) {
 		this.nofPayInTransactions = nofPayInTransactions;
+	}
+	
+	public Long getNofPayInTransactionsUnverified() {
+		return nofPayInTransactionsUnverified;
+	}
+
+	public void setNofPayInTransactionsUnverified(Long nofPayInTransactionsUnverified) {
+		this.nofPayInTransactionsUnverified = nofPayInTransactionsUnverified;
 	}
 
 	public Long getNofPayOutTransactions() {
@@ -101,6 +125,7 @@ public class GetHistoryTransferObject extends TransferObject {
 				
 		setNofTransactions(toLongOrNull(o.get("nofTransactions")));
 		setNofPayInTransactions(toLongOrNull(o.get("nofPayInTransactions")));
+		setNofPayInTransactionsUnverified(toLongOrNull(o.get("nofPayInTransactionsUnverified")));
 		setNofPayOutTransactions(toLongOrNull(o.get("nofPayOutTransactions")));
 
 		JSONArray array1 = toJSONArrayOrNull(o.get("transactionHistory"));
@@ -114,7 +139,6 @@ public class GetHistoryTransferObject extends TransferObject {
 			}
 		}
 		setTransactionHistory(transactionHistory);
-		
 
 		JSONArray array2 = toJSONArrayOrNull(o.get("payInTransactionHistory"));
 		ArrayList<HistoryPayInTransaction> payInTransactionHistory = new ArrayList<HistoryPayInTransaction>();
@@ -128,10 +152,22 @@ public class GetHistoryTransferObject extends TransferObject {
 		}
 		setPayInTransactionHistory(payInTransactionHistory);
 		
-		JSONArray array3 = toJSONArrayOrNull(o.get("payOutTransactionHistory"));
-		ArrayList<HistoryPayOutTransaction> payOutTransactionHistory = new ArrayList<HistoryPayOutTransaction>();
+		JSONArray array3 = toJSONArrayOrNull(o.get("payInTransactionUnverifiedHistory"));
+		ArrayList<HistoryPayInTransaction> payInTransactionUnverifiedHistory = new ArrayList<HistoryPayInTransaction>();
 		if(array3!=null) {
 			for(Object o2:array3) {
+				JSONObject o3 = (JSONObject) o2;
+				HistoryPayInTransaction h1 = new HistoryPayInTransaction();
+				h1.decode(o3);
+				payInTransactionUnverifiedHistory.add(h1);
+			}
+		}
+		setPayInTransactionUnverifiedHistory(payInTransactionUnverifiedHistory);
+		
+		JSONArray array4 = toJSONArrayOrNull(o.get("payOutTransactionHistory"));
+		ArrayList<HistoryPayOutTransaction> payOutTransactionHistory = new ArrayList<HistoryPayOutTransaction>();
+		if(array4!=null) {
+			for(Object o2:array4) {
 				JSONObject o3 = (JSONObject) o2;
 				HistoryPayOutTransaction h1 = new HistoryPayOutTransaction();
 				h1.decode(o3);
@@ -154,38 +190,51 @@ public class GetHistoryTransferObject extends TransferObject {
 		if(nofPayInTransactions!=null) {
 			jsonObject.put("nofPayInTransactions", nofPayInTransactions);
 		}
+		if(nofPayInTransactionsUnverified!=null) {
+			jsonObject.put("nofPayInTransactionsUnverified", nofPayInTransactionsUnverified);
+		}
 		if(nofPayOutTransactions!=null) {
 			jsonObject.put("nofPayOutTransactions", nofPayOutTransactions);
 		}
 		
 		if(transactionHistory != null) {
-			JSONArray array1 = new JSONArray();
+			JSONArray array = new JSONArray();
 			for(HistoryTransaction h: transactionHistory) {
 				JSONObject o = new JSONObject();
 				h.encode(o);
-				array1.add(o);
+				array.add(o);
 			}
-			jsonObject.put("transactionHistory", array1);
+			jsonObject.put("transactionHistory", array);
 		}
 		
 		if(payInTransactionHistory != null) {
-			JSONArray array2 = new JSONArray();
+			JSONArray array = new JSONArray();
 			for(HistoryPayInTransaction h: payInTransactionHistory) {
 				JSONObject o = new JSONObject();
 				h.encode(o);
-				array2.add(o);
+				array.add(o);
 			}
-			jsonObject.put("payInTransactionHistory", array2);
+			jsonObject.put("payInTransactionHistory", array);
+		}
+		
+		if(payInTransactionUnverifiedHistory != null) {
+			JSONArray array = new JSONArray();
+			for(HistoryPayInTransaction h: payInTransactionUnverifiedHistory) {
+				JSONObject o = new JSONObject();
+				h.encode(o);
+				array.add(o);
+			}
+			jsonObject.put("payInTransactionUnverifiedHistory", array);
 		}
 		
 		if(payOutTransactionHistory != null) {
-			JSONArray array3 = new JSONArray();
+			JSONArray array = new JSONArray();
 			for(HistoryPayOutTransaction h: payOutTransactionHistory) {
 				JSONObject o = new JSONObject();
 				h.encode(o);
-				array3.add(o);
+				array.add(o);
 			}
-			jsonObject.put("payOutTransactionHistory", array3);
+			jsonObject.put("payOutTransactionHistory", array);
 		}
     }
 }

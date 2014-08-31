@@ -7,6 +7,7 @@ public class HistoryTransferRequestObject extends TransferObject {
 
 	private Integer txPage;
 	private Integer txPayInPage;
+	private Integer txPayInUnverifiedPage;
 	private Integer txPayOutPage;
 
 	public Integer getTxPage() {
@@ -19,6 +20,14 @@ public class HistoryTransferRequestObject extends TransferObject {
 
 	public Integer getTxPayInPage() {
 		return txPayInPage;
+	}
+
+	public void setTxPayInUnverifiedPage(Integer txPayInUnverifiedPage) {
+		this.txPayInUnverifiedPage = txPayInUnverifiedPage;
+	}
+	
+	public Integer getTxPayInUnverifiedPage() {
+		return txPayInUnverifiedPage;
 	}
 
 	public void setTxPayInPage(Integer txPayInPage) {
@@ -34,7 +43,7 @@ public class HistoryTransferRequestObject extends TransferObject {
 	}
 
 	public boolean isComplete() {
-		return txPage != null && txPayInPage != null && txPayOutPage != null;
+		return txPage != null && txPayInPage != null && txPayOutPage != null && txPayInUnverifiedPage != null;
 	}
 
 	@Override
@@ -46,6 +55,7 @@ public class HistoryTransferRequestObject extends TransferObject {
 	public JSONObject decode(JSONObject o) {
 		setTxPage(toIntOrNull(o.get("txPage")));
 		setTxPayInPage(toIntOrNull(o.get("txPayInPage")));
+		setTxPayInUnverifiedPage(toIntOrNull(o.get("txPayInUnverifiedPage")));
 		setTxPayOutPage(toIntOrNull(o.get("txPayOutPage")));
 		return o;
 	}
@@ -58,6 +68,7 @@ public class HistoryTransferRequestObject extends TransferObject {
 		
 		jsonObject.put("txPage", txPage);
 		jsonObject.put("txPayInPage", txPayInPage);
+		jsonObject.put("txPayInUnverifiedPage", txPayInUnverifiedPage);
 		jsonObject.put("txPayOutPage", txPayOutPage);
 	}
 }
