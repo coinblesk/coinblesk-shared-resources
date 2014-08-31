@@ -8,6 +8,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 import ch.uzh.csg.mbps.model.HistoryPayInTransaction;
+import ch.uzh.csg.mbps.model.HistoryPayInTransactionUnverified;
 import ch.uzh.csg.mbps.model.HistoryPayOutTransaction;
 import ch.uzh.csg.mbps.model.HistoryTransaction;
 
@@ -15,7 +16,7 @@ public class GetHistoryTransferObject extends TransferObject {
 	
 	private List<HistoryTransaction> transactionHistory;
 	private List<HistoryPayInTransaction> payInTransactionHistory;
-	private List<HistoryPayInTransaction> payInTransactionUnverifiedHistory;
+	private List<HistoryPayInTransactionUnverified> payInTransactionUnverifiedHistory;
 	private List<HistoryPayOutTransaction> payOutTransactionHistory;
 	
 	private Long nofTransactions;
@@ -28,7 +29,7 @@ public class GetHistoryTransferObject extends TransferObject {
 	
 	public GetHistoryTransferObject(List<HistoryTransaction> transactions,
 			List<HistoryPayInTransaction> payInTransactions,
-			List<HistoryPayInTransaction> payInTransactionUnverifiedHistory,
+			List<HistoryPayInTransactionUnverified> payInTransactionUnverifiedHistory,
 			List<HistoryPayOutTransaction> payOutTransactions,
 			Long nofTransactions,
 			Long nofPayInTransactions,
@@ -61,11 +62,11 @@ public class GetHistoryTransferObject extends TransferObject {
 	}
 	
 	
-	public List<HistoryPayInTransaction> getPayInTransactionUnverifiedHistory() {
+	public List<HistoryPayInTransactionUnverified> getPayInTransactionUnverifiedHistory() {
 		return payInTransactionUnverifiedHistory;
 	}
 
-	public void setPayInTransactionUnverifiedHistory(List<HistoryPayInTransaction> payInTransactionUnverifiedHistory) {
+	public void setPayInTransactionUnverifiedHistory(List<HistoryPayInTransactionUnverified> payInTransactionUnverifiedHistory) {
 		this.payInTransactionUnverifiedHistory = payInTransactionUnverifiedHistory;
 	}
 	
@@ -153,11 +154,11 @@ public class GetHistoryTransferObject extends TransferObject {
 		setPayInTransactionHistory(payInTransactionHistory);
 		
 		JSONArray array3 = toJSONArrayOrNull(o.get("payInTransactionUnverifiedHistory"));
-		ArrayList<HistoryPayInTransaction> payInTransactionUnverifiedHistory = new ArrayList<HistoryPayInTransaction>();
+		ArrayList<HistoryPayInTransactionUnverified> payInTransactionUnverifiedHistory = new ArrayList<HistoryPayInTransactionUnverified>();
 		if(array3!=null) {
 			for(Object o2:array3) {
 				JSONObject o3 = (JSONObject) o2;
-				HistoryPayInTransaction h1 = new HistoryPayInTransaction();
+				HistoryPayInTransactionUnverified h1 = new HistoryPayInTransactionUnverified();
 				h1.decode(o3);
 				payInTransactionUnverifiedHistory.add(h1);
 			}
@@ -219,7 +220,7 @@ public class GetHistoryTransferObject extends TransferObject {
 		
 		if(payInTransactionUnverifiedHistory != null) {
 			JSONArray array = new JSONArray();
-			for(HistoryPayInTransaction h: payInTransactionUnverifiedHistory) {
+			for(HistoryPayInTransactionUnverified h: payInTransactionUnverifiedHistory) {
 				JSONObject o = new JSONObject();
 				h.encode(o);
 				array.add(o);
