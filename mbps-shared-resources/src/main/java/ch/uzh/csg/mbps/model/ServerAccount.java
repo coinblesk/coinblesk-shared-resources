@@ -27,8 +27,8 @@ public class ServerAccount implements Serializable {
 		this.payinAddress = payinAddress;
 		this.payoutAddress = payoutAddress;
 		this.trustLevel = trustLevel;
-		this.activeBalance = activeBalance;
-		this.balanceLimit = balanceLimit;
+		this.activeBalance = new BigDecimal(activeBalance.toString());
+		this.balanceLimit = new BigDecimal(balanceLimit.toString());
 	}
 	
 	public ServerAccount(String url) {
