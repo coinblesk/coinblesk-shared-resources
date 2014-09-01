@@ -123,10 +123,10 @@ public class ServerAccount implements Serializable {
 			o.put("trustLevel", trustLevel);
 		}
 		if(activeBalance!=null){
-			o.put("activeBalance", activeBalance);
+			o.put("activeBalance", activeBalance+ "BTC");
 		}
 		if(balanceLimit!=null){
-			o.put("balanceLimit", balanceLimit);
+			o.put("balanceLimit", balanceLimit+ "BTC");
 		}
     }
 	
