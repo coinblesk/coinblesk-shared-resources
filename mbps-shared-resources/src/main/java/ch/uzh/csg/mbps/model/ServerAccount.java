@@ -16,12 +16,13 @@ public class ServerAccount implements Serializable {
 	private Integer trustLevel;
 	private BigDecimal activeBalance;
 	private BigDecimal balanceLimit;
+	private BigDecimal userBalanceLimit;
 	
 	public ServerAccount(){
 	}
 	
 	public ServerAccount(Long id, String url, String payinAddress, String payoutAddress, Integer trustLevel,
-			BigDecimal activeBalance, BigDecimal balanceLimit){
+			BigDecimal activeBalance, BigDecimal balanceLimit, BigDecimal userBalanceLimit){
 		this.id = id;
 		this.url = url;
 		this.payinAddress = payinAddress;
@@ -29,6 +30,7 @@ public class ServerAccount implements Serializable {
 		this.trustLevel = trustLevel;
 		this.activeBalance = activeBalance;
 		this.balanceLimit = balanceLimit;
+		this.userBalanceLimit = userBalanceLimit;
 	}
 	
 	public ServerAccount(String url) {
@@ -90,6 +92,14 @@ public class ServerAccount implements Serializable {
 		this.balanceLimit = balanceLimit;
 	}
 
+	public BigDecimal getUserBalanceLimit() {
+		return balanceLimit;
+	}
+
+	public void setUserBalanceLimit(BigDecimal userBalanceLimit) {
+		this.userBalanceLimit = userBalanceLimit;
+	}
+	
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
@@ -101,6 +111,8 @@ public class ServerAccount implements Serializable {
 		sb.append(getActiveBalance());
 		sb.append(", balance limit: ");
 		sb.append(getBalanceLimit());
+		sb.append(", user balance limit: ");
+		sb.append(getUserBalanceLimit());
 		sb.append(", trust level: ");
 		sb.append(getTrustLevel());
 		return sb.toString();
@@ -128,6 +140,9 @@ public class ServerAccount implements Serializable {
 		if(balanceLimit!=null){
 			o.put("balanceLimit", balanceLimit+ "BTC");
 		}
+		if(userBalanceLimit!=null){
+			o.put("userBalanceLimit", userBalanceLimit+ "BTC");
+		}
     }
 	
 	public void decode(JSONObject o) {
@@ -138,6 +153,7 @@ public class ServerAccount implements Serializable {
 		setTrustLevel(TransferObject.toIntOrNull(o.get("trustLevel")));
 		setActiveBalance(TransferObject.toBigDecimalOrNull(o.get("activeBalance")));
 		setBalanceLimit(TransferObject.toBigDecimalOrNull(o.get("balanceLimit")));
+		setUserBalanceLimit(TransferObject.toBigDecimalOrNull(o.get("userBalanceLimit")));
     }
 	
 }
