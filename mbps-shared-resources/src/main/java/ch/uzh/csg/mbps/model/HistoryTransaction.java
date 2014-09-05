@@ -16,20 +16,25 @@ public class HistoryTransaction extends AbstractHistory {
 	private static final long serialVersionUID = 7710423735485262156L;
 
 	private String buyer;
+	private String buyerServer;
 	private String seller;
+	private String sellerServer;
 	private String inputCurrency;
 	private BigDecimal inputCurrencyAmount;
 
 	public HistoryTransaction() {
 	}
 
-	public HistoryTransaction(Date timestamp, String buyer, String seller, BigDecimal amount, String inputCurrency, BigDecimal inputCurrencyAmount) {
+	public HistoryTransaction(Date timestamp, String buyer, String seller, BigDecimal amount, String inputCurrency, BigDecimal inputCurrencyAmount,
+			String buyerServer, String sellerServer) {
 		this.timestamp = timestamp;
 		this.buyer = buyer;
 		this.seller = seller;
 		this.amount = amount;
 		this.inputCurrency = inputCurrency;
 		this.inputCurrencyAmount = inputCurrencyAmount;
+		this.buyerServer = buyerServer;
+		this.sellerServer = sellerServer;
 	}
 
 	public String getBuyer() {
@@ -40,14 +45,30 @@ public class HistoryTransaction extends AbstractHistory {
 		this.buyer = buyer;
 	}
 
+	public String getBuyerServer() {
+		return buyerServer;
+	}
+
+	public void setBuyerServer(String buyerServer) {
+		this.buyerServer = buyerServer;
+	}
+	
 	public String getSeller() {
 		return seller;
 	}
-
+	
 	public void setSeller(String seller) {
 		this.seller = seller;
 	}
 
+	public String getSellerSever() {
+		return sellerServer;
+	}
+
+	public void setSellerServer(String sellerServer) {
+		this.sellerServer = sellerServer;
+	}
+	
 	public String getInputCurrency() {
 		return inputCurrency;
 	}
@@ -75,8 +96,12 @@ public class HistoryTransaction extends AbstractHistory {
 		sb.append("\n");
 		sb.append("From: ");
 		sb.append(getBuyer());
+		sb.append(" ,url ");
+		sb.append(getBuyerServer());
 		sb.append(", To: ");
 		sb.append(getSeller());
+		sb.append(" ,url ");
+		sb.append(getSellerSever());
 		sb.append(", Amount: ");
 		sb.append(DisplayFormatBTC.format(getAmount()));
 		sb.append(" BTC");
@@ -90,8 +115,14 @@ public class HistoryTransaction extends AbstractHistory {
 		if(buyer!=null) {
 			o.put("buyer", buyer);
 		}
+		if(buyerServer!=null) {
+			o.put("buyerServer", buyerServer);
+		}
 		if(seller!=null) {
 			o.put("seller", seller);
+		}
+		if(sellerServer!=null) {
+			o.put("sellerServer", sellerServer);
 		}
 		if(inputCurrency!=null && inputCurrencyAmount!=null) {
 			o.put("inputCurrency", inputCurrencyAmount + inputCurrency);
@@ -103,7 +134,9 @@ public class HistoryTransaction extends AbstractHistory {
 	public void decode(JSONObject o) {
 		super.decode(o);
 		setBuyer(TransferObject.toStringOrNull(o.get("buyer")));
+		setBuyerServer(TransferObject.toStringOrNull(o.get("buyerServer")));
 		setSeller(TransferObject.toStringOrNull(o.get("seller")));
+		setSellerServer(TransferObject.toStringOrNull(o.get("sellerServer")));
 		
 		String s = TransferObject.toStringOrNull(o.get("inputCurrency"));
 		if(s!=null) {
