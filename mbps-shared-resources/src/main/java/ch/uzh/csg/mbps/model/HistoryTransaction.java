@@ -14,7 +14,8 @@ import ch.uzh.csg.mbps.responseobject.TransferObject;
 
 public class HistoryTransaction extends AbstractHistory {
 	private static final long serialVersionUID = 7710423735485262156L;
-
+	private static final String SPLIT_CHARACTER = "@";
+	
 	private String buyer;
 	private String buyerServer;
 	private String seller;
@@ -91,15 +92,20 @@ public class HistoryTransaction extends AbstractHistory {
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy' 'HH:mm:ss", Locale.getDefault());
 		sdf.setTimeZone(TimeZone.getDefault());
 		
+		int indexPayer = getBuyer().indexOf(SPLIT_CHARACTER);
+		String buyer = getBuyer().substring(0, indexPayer);
+		int indexPayee = getSeller().indexOf(SPLIT_CHARACTER);
+		String seller = getSeller().substring(0, indexPayee);
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append(sdf.format(getTimestamp()));
 		sb.append("\n");
 		sb.append("From: ");
-		sb.append(getBuyer());
+		sb.append(buyer);
 		sb.append(" ,url ");
 		sb.append(getBuyerServer());
 		sb.append(", To: ");
-		sb.append(getSeller());
+		sb.append(seller);
 		sb.append(" ,url ");
 		sb.append(getSellerSever());
 		sb.append(", Amount: ");
