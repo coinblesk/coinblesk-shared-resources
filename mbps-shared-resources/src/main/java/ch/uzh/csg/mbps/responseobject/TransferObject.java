@@ -180,8 +180,28 @@ public class TransferObject {
         }
     }
 	
+	public static Boolean toBooleanOrNull(Object o) {
+		if (o == null) {
+			return null;
+		}
+		String s1 = o.toString();
+		return Boolean.parseBoolean(s1);
+    }
+
+	public static Byte toByteOrNull(Object o) {
+		if (o == null) {
+			return null;
+		}
+		String s1 = o.toString();
+		try {
+			return Byte.parseByte(s1);
+		} catch (NumberFormatException nfe) {
+			nfe.printStackTrace();
+			return null;
+		}
+	}
+	
 	public static String encodeToString(Date timestamp) {
 		return DATE_FORMAT.format(timestamp);
-    }
-	
+    }	
 }
