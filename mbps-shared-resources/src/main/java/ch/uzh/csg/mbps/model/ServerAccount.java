@@ -93,7 +93,7 @@ public class ServerAccount implements Serializable {
 	}
 
 	public BigDecimal getUserBalanceLimit() {
-		return balanceLimit;
+		return userBalanceLimit;
 	}
 
 	public void setUserBalanceLimit(BigDecimal userBalanceLimit) {

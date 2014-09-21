@@ -6,12 +6,22 @@ import net.minidev.json.JSONObject;
 
 public class UserAccountObject extends TransferObject {
 
-	private Long id;
-	private String username;
+	private BigDecimal balance;
 	private String email;
+	private Long id;
 	private String password;
 	private String paymentAddress;
-	private BigDecimal balance;
+	private Byte role;
+	private String username;
+
+	public Byte getRole() {
+		return role;
+	}
+
+	public void setRole(Byte role) {
+		this.role = role;
+	}
+
 
 	public Long getId() {
 		return id;
@@ -62,11 +72,14 @@ public class UserAccountObject extends TransferObject {
 	}
 	
 	public void encodeThis(JSONObject jsonObject) throws Exception {
-		if (username != null) {
-			jsonObject.put("username", username);
+		if (balance != null) {
+			jsonObject.put("balance", balance + "BTC");
 		}
 		if (email != null) {
 			jsonObject.put("email", email);
+		}
+		if (id != null) {
+			jsonObject.put("id", id);
 		}
 		if (password != null) {
 			jsonObject.put("password", password);
@@ -74,11 +87,11 @@ public class UserAccountObject extends TransferObject {
 		if (paymentAddress != null) {
 			jsonObject.put("paymentAddress", paymentAddress);
 		}
-		if (id != null) {
-			jsonObject.put("id", id);
+		if(role != null){
+			jsonObject.put("role", role);			
 		}
-		if (balance != null) {
-			jsonObject.put("balance", balance + "BTC");
+		if (username != null) {
+			jsonObject.put("username", username);
 		}
 	}
 
@@ -95,12 +108,13 @@ public class UserAccountObject extends TransferObject {
 	}
 
 	public JSONObject decode(JSONObject o) {
-		setUsername(toStringOrNull(o.get("username")));
+		setBalanceBTC(toBigDecimalOrNull(o.get("balance")));
 		setEmail(toStringOrNull(o.get("email")));
+		setId(toLongOrNull(o.get("id")));
 		setPassword(toStringOrNull(o.get("password")));
 		setPaymentAddress(toStringOrNull(o.get("paymentAddress")));
-		setId(toLongOrNull(o.get("id")));
-		setBalanceBTC(toBigDecimalOrNull(o.get("balance")));
+		setUsername(toStringOrNull(o.get("username")));
+		setRole(toByteOrNull(o.get("role")));
 		return o;
 	}
 
