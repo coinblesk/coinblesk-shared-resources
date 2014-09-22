@@ -38,6 +38,15 @@ public class HistoryTransaction extends AbstractHistory {
 		this.sellerServer = sellerServer;
 	}
 
+	public HistoryTransaction(Date timestamp, String buyer, String seller, BigDecimal amount, String inputCurrency, BigDecimal inputCurrencyAmount) {
+		this.timestamp = timestamp;
+		this.buyer = buyer;
+		this.seller = seller;
+		this.amount = amount;
+		this.inputCurrency = inputCurrency;
+		this.inputCurrencyAmount = inputCurrencyAmount;
+	}
+
 	public String getBuyer() {
 		return buyer;
 	}
@@ -92,10 +101,17 @@ public class HistoryTransaction extends AbstractHistory {
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy' 'HH:mm:ss", Locale.getDefault());
 		sdf.setTimeZone(TimeZone.getDefault());
 		
-		int indexPayer = getBuyer().indexOf(SPLIT_CHARACTER);
-		String buyer = getBuyer().substring(0, indexPayer);
-		int indexPayee = getSeller().indexOf(SPLIT_CHARACTER);
-		String seller = getSeller().substring(0, indexPayee);
+		String buyer = getBuyer();
+		String seller = getSeller();
+		
+		if(getBuyer().contains(SPLIT_CHARACTER)){			
+			int indexPayer = getBuyer().indexOf(SPLIT_CHARACTER);
+			buyer = getBuyer().substring(0, indexPayer);
+		}
+		if(getSeller().contains(SPLIT_CHARACTER)){
+			int indexPayee = getSeller().indexOf(SPLIT_CHARACTER);
+			seller = getSeller().substring(0, indexPayee);			
+		}
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(sdf.format(getTimestamp()));
