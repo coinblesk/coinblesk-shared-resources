@@ -1,0 +1,10 @@
+ch/uzh/csg/mbps/util/JSONConvertHistoryRequestTest.class
+ch/uzh/csg/mbps/util/JSONConvertUserTest.class
+ch/uzh/csg/mbps/util/JSONConverterBaseTest.class
+ch/uzh/csg/mbps/util/JSONConvertMainTest.class
+ch/uzh/csg/mbps/util/JSONConvertReadTest.class
+ch/uzh/csg/mbps/util/JSONConvertHistoryResponseTest.class
+ch/uzh/csg/mbps/util/JSONConvertTransactionTest.class
+ch/uzh/csg/mbps/util/JSONConvertPayoutRuleTest.class
+ch/uzh/csg/mbps/util/JSONConvertPayoutTest.class
+ch/uzh/csg/mbps/util/ConverterTest2.class
