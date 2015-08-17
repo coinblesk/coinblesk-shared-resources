@@ -3,7 +3,8 @@ package ch.uzh.csg.coinblesk.responseobject;
 import java.util.HashMap;
 import java.util.Map;
 
-import ch.uzh.csg.coinblesk.customserialization.Currency;
+import ch.uzh.csg.coinblesk.Currency;
+
 
 public class ExchangeRateTransferObject extends TransferObject {
     
