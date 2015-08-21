@@ -1,5 +1,6 @@
 package ch.uzh.csg.coinblesk.responseobject;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import net.minidev.json.JSONObject;
@@ -17,14 +18,13 @@ public class ServerSignatureRequestTransferObjectTest {
     public void testEncodeDecode() throws Exception {
         String msg = "message";
         String tx = "tx";
-        int index = RND.nextInt();
-        int[] paths = {1,2,3,4,5,6,7};
+        int childNumber = RND.nextInt();
         
         ServerSignatureRequestTransferObject obj = new ServerSignatureRequestTransferObject();
         
         obj.setMessage(msg);
         obj.setPartialTx(tx);
-        obj.addIndexAndDerivationPath(index, paths);
+        obj.addChildNumber(childNumber);
         
         String json = obj.toJson();
         System.out.println(json);
@@ -33,8 +33,7 @@ public class ServerSignatureRequestTransferObjectTest {
         
         Assert.assertEquals(msg, decoded.getMessage());
         Assert.assertEquals(tx, decoded.getPartialTx());
-        Assert.assertEquals(index, decoded.getIndexAndDerivationPaths().get(0).getIndex());
-        Assert.assertArrayEquals(paths, decoded.getIndexAndDerivationPaths().get(0).getDerivationPath());
+        Assert.assertEquals(childNumber, (int) decoded.getChildNumbers().get(0));
         
         
     }

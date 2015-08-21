@@ -3,14 +3,11 @@ package ch.uzh.csg.coinblesk.responseobject;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-
 public class ServerSignatureRequestTransferObject extends TransferObject {
     
     
     private String partialTx; // Base64 encoded partial transaction
-    private List<IndexAndDerivationPath> indexAndDerivationPaths;
+    private List<Integer> childNumbers; // the child numbers of the keys used
     
     
     public String getPartialTx() {
@@ -21,29 +18,27 @@ public class ServerSignatureRequestTransferObject extends TransferObject {
         this.partialTx = partialTx;
     }
 
-    public List<IndexAndDerivationPath> getIndexAndDerivationPaths() {
-        return indexAndDerivationPaths;
+    public List<Integer> getChildNumbers() {
+        return childNumbers;
     }
 
-
-    public void setIndexAndDerivationPaths(List<IndexAndDerivationPath> indexAndDerivationPaths) {
-        this.indexAndDerivationPaths = indexAndDerivationPaths;
+    public void setChildNumbers(List<Integer> childNumbers) {
+        this.childNumbers = childNumbers;
     }
     
-    public void addIndexAndDerivationPath(int index, int[] path) {
-        if(indexAndDerivationPaths == null) {
-            indexAndDerivationPaths = new ArrayList<>();
+    public void addChildNumber(int childNumber) {
+        if(childNumbers == null) {
+            childNumbers = new ArrayList<>();
         }
-        this.indexAndDerivationPaths.add(new IndexAndDerivationPath(index, path));
+        this.childNumbers.add(childNumber);
     }
-
 
     /**
      * Clears the data stored in this transfer object
      */
     public void clear() {
         this.partialTx = null;
-        this.indexAndDerivationPaths = new ArrayList<>();
+        this.childNumbers = null;
     }
 
 }
