@@ -7,6 +7,7 @@ public class ServerSignatureRequestTransferObject extends TransferObject {
     
     
     private String partialTx; // Base64 encoded partial transaction
+    private List<Byte> accountNumbers; // the account numbers of the keys used
     private List<Integer> childNumbers; // the child numbers of the keys used
     
     
@@ -16,6 +17,21 @@ public class ServerSignatureRequestTransferObject extends TransferObject {
 
     public void setPartialTx(String partialTx) {
         this.partialTx = partialTx;
+    }
+    
+    public List<Byte> getAccountNumbers() {
+        return accountNumbers;
+    }
+
+    public void setAccountNumbers(List<Byte> accountNumbers) {
+        this.accountNumbers = accountNumbers;
+    }
+    
+    public void addAccountNumber(byte accountNumber) {
+        if(accountNumbers == null) {
+            accountNumbers = new ArrayList<>();
+        }
+        this.accountNumbers.add(accountNumber);
     }
 
     public List<Integer> getChildNumbers() {

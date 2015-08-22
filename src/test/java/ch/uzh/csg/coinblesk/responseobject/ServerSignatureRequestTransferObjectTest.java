@@ -19,12 +19,14 @@ public class ServerSignatureRequestTransferObjectTest {
         String msg = "message";
         String tx = "tx";
         int childNumber = RND.nextInt();
+        byte accountNumber = (byte) RND.nextInt();
         
         ServerSignatureRequestTransferObject obj = new ServerSignatureRequestTransferObject();
         
         obj.setMessage(msg);
         obj.setPartialTx(tx);
         obj.addChildNumber(childNumber);
+        obj.addAccountNumber(accountNumber);
         
         String json = obj.toJson();
         System.out.println(json);

@@ -17,7 +17,5 @@ public class SignedTxTransferObject extends TransferObject {
     public void setSignedTx(String signedTx) {
         this.signedTx = signedTx;
     }
-    
-    
 
 }
