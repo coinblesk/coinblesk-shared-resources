@@ -1,6 +1,6 @@
-package ch.uzh.csg.coinblesk.responseobject;
+package com.coinblesk.responseobject;
 
-import ch.uzh.csg.coinblesk.JsonConverter;
+import com.coinblesk.JsonConverter;
 
 
 

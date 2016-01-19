@@ -1,4 +1,4 @@
-package ch.uzh.csg.coinblesk.responseobject;
+package com.coinblesk.responseobject;
 
 import java.util.ArrayList;
 import java.util.List;

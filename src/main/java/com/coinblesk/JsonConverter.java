@@ -1,4 +1,4 @@
-package ch.uzh.csg.coinblesk;
+package com.coinblesk;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

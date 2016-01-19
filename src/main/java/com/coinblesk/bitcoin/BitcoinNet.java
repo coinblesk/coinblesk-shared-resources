@@ -1,4 +1,4 @@
-package ch.uzh.csg.coinblesk.bitcoin;
+package com.coinblesk.bitcoin;
 
 
 /**

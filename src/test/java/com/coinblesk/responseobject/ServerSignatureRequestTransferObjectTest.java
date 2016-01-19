@@ -1,5 +1,6 @@
-package ch.uzh.csg.coinblesk.responseobject;
+package com.coinblesk.responseobject;
 
+import com.coinblesk.responseobject.ServerSignatureRequestTransferObject;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -8,7 +9,7 @@ import net.minidev.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import ch.uzh.csg.coinblesk.JsonConverter;
+import com.coinblesk.JsonConverter;
 
 public class ServerSignatureRequestTransferObjectTest {
     

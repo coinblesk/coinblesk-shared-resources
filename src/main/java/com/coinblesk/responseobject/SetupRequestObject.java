@@ -1,6 +1,6 @@
-package ch.uzh.csg.coinblesk.responseobject;
+package com.coinblesk.responseobject;
 
-import ch.uzh.csg.coinblesk.bitcoin.BitcoinNet;
+import com.coinblesk.bitcoin.BitcoinNet;
 
 public class SetupRequestObject extends TransferObject {
 	

@@ -1,9 +1,9 @@
-package ch.uzh.csg.coinblesk.responseobject;
+package com.coinblesk.responseobject;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import ch.uzh.csg.coinblesk.Currency;
+import com.coinblesk.customserialization.Currency;
 
 
 public class ExchangeRateTransferObject extends TransferObject {
