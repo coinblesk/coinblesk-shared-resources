@@ -22,7 +22,9 @@ public class StatusTO {
         NO_EMAIL(-3),
         INVALID_EMAIL(-4),
         PASSWORD_TOO_SHORT(-5),
-        INVALID_EMAIL_TOKEN(-6);
+        INVALID_EMAIL_TOKEN(-6),
+        NO_ACCOUNT(-7),
+        ACCOUNT_ERROR(-8);
         
         private final int reason;
         // Reverse-lookup map for getting a day from an abbreviation
