@@ -18,16 +18,16 @@ public class UserAccountTO {
         return this;
     }
     
-    public String email() {
-        return email;
-    }
-    
-    public UserAccountTO email(String password) {
-        this.password = password;
-        return this;
-    }
-    
     public String password() {
         return password;
     }
+    
+    public UserAccountTO email(String email) {
+        this.email = email;
+        return this;
+    }
+    
+    public String email() {
+        return email;
+    } 
 }
