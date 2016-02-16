@@ -12,19 +12,12 @@ import java.util.Map;
  *
  * @author draft
  */
-public class StatusTO {
+public class RefundTO {
     
     public enum Reason {
-        EMAIL_ALREADY_EXISTS_NOT_ACTIVATED(2),
-        EMAIL_ALREADY_EXISTS_ACTIVATED(1),
         SERVER_ERROR(-1),
         REASON_NOT_FOUND(-2),
-        NO_EMAIL(-3),
-        INVALID_EMAIL(-4),
-        PASSWORD_TOO_SHORT(-5),
-        INVALID_EMAIL_TOKEN(-6),
-        NO_ACCOUNT(-7),
-        ACCOUNT_ERROR(-8);
+        KEYS_NOT_FOUND(-3);
         
         private final int reason;
         // Reverse-lookup map for getting a day from an abbreviation
@@ -52,13 +45,16 @@ public class StatusTO {
     private boolean success = false;
     private int reason = 0;
     private String message;
+    private String refundTransaction;
+    private String transactionSignature;
+    private String clientPublicKeyHash;
     
-    public StatusTO success(final boolean success) {
+    public RefundTO success(final boolean success) {
         this.success = success;
         return this;
     }
     
-    public StatusTO setSuccess() {
+    public RefundTO setSuccess() {
         return success(true);
     }
     
@@ -66,22 +62,49 @@ public class StatusTO {
         return success;
     }
     
-    public StatusTO reason(final Reason reason) {
+    public RefundTO reason(final RefundTO.Reason reason) {
         this.reason = reason.nr();
         return this;
     }
     
-    public Reason reason() {
-        final Reason reason = Reason.get(this.reason);
-        return reason == null ? Reason.REASON_NOT_FOUND : reason;
+    public RefundTO.Reason reason() {
+        final RefundTO.Reason reason = RefundTO.Reason.get(this.reason);
+        return reason == null ? RefundTO.Reason.REASON_NOT_FOUND : reason;
     }
     
-    public StatusTO message(final String message) {
+    public RefundTO message(final String message) {
         this.message = message;
         return this;
     }
     
     public String message() {
         return message;
+    }
+    
+    public RefundTO refundTransaction(String refundTransaction) {
+        this.refundTransaction = refundTransaction;
+        return this;
+    }
+    
+    public String refundTransaction() {
+        return refundTransaction;
+    }
+    
+    public RefundTO transactionSignature(String transactionSignature) {
+        this.transactionSignature = transactionSignature;
+        return this;
+    }
+    
+    public String transactionSignature() {
+        return transactionSignature;
+    }
+    
+    public RefundTO clientPublicKeyHash(String clientPublicKeyHash) {
+        this.clientPublicKeyHash = clientPublicKeyHash;
+        return this;
+    }
+    
+    public String clientPublicKeyHash() {
+        return clientPublicKeyHash;
     }
 }
