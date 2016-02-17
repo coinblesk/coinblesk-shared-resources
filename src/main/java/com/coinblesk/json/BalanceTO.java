@@ -12,12 +12,11 @@ import java.util.Map;
  *
  * @author draft
  */
-public class RefundTO {
+public class BalanceTO {
     
     public enum Reason {
         SERVER_ERROR(-1),
-        REASON_NOT_FOUND(-2),
-        KEYS_NOT_FOUND(-3);
+        REASON_NOT_FOUND(-2);
         
         private final int reason;
         // Reverse-lookup map for getting a day from an abbreviation
@@ -45,17 +44,14 @@ public class RefundTO {
     private boolean success = false;
     private int reason = 0;
     private String message;
-    private String refundTransaction;
-    private String clientSignatureR;
-    private String clientSignatureS;
-    private String clientPublicKey;
+    private String balance;
     
-    public RefundTO success(final boolean success) {
+    public BalanceTO success(final boolean success) {
         this.success = success;
         return this;
     }
     
-    public RefundTO setSuccess() {
+    public BalanceTO setSuccess() {
         return success(true);
     }
     
@@ -63,17 +59,17 @@ public class RefundTO {
         return success;
     }
     
-    public RefundTO reason(final RefundTO.Reason reason) {
+    public BalanceTO reason(final BalanceTO.Reason reason) {
         this.reason = reason.nr();
         return this;
     }
     
-    public RefundTO.Reason reason() {
-        final RefundTO.Reason reason = RefundTO.Reason.get(this.reason);
-        return reason == null ? RefundTO.Reason.REASON_NOT_FOUND : reason;
+    public BalanceTO.Reason reason() {
+        final BalanceTO.Reason reason = BalanceTO.Reason.get(this.reason);
+        return reason == null ? BalanceTO.Reason.REASON_NOT_FOUND : reason;
     }
     
-    public RefundTO message(final String message) {
+    public BalanceTO message(final String message) {
         this.message = message;
         return this;
     }
@@ -82,39 +78,12 @@ public class RefundTO {
         return message;
     }
     
-    public RefundTO refundTransaction(String refundTransaction) {
-        this.refundTransaction = refundTransaction;
+    public BalanceTO balance(String balance) {
+        this.balance = balance;
         return this;
     }
     
-    public String refundTransaction() {
-        return refundTransaction;
-    }
-    
-    public RefundTO clientSignatureR(String clientSignatureR) {
-        this.clientSignatureR = clientSignatureR;
-        return this;
-    }
-    
-    public String clientSignatureR() {
-        return clientSignatureR;
-    }
-    
-    public RefundTO clientSignatureS(String clientSignatureS) {
-        this.clientSignatureS = clientSignatureS;
-        return this;
-    }
-    
-    public String clientSignatureS() {
-        return clientSignatureS;
-    }
-    
-    public RefundTO clientPublicKey(String clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
-        return this;
-    }
-    
-    public String clientPublicKey() {
-        return clientPublicKey;
+    public String balance() {
+        return balance;
     }
 }
