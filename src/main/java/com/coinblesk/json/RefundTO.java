@@ -6,6 +6,7 @@
 package com.coinblesk.json;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,42 +14,66 @@ import java.util.Map;
  * @author draft
  */
 public class RefundTO {
-    
-    public enum Reason {
-        SERVER_ERROR(-1),
-        REASON_NOT_FOUND(-2),
-        KEYS_NOT_FOUND(-3);
-        
-        private final int reason;
-        // Reverse-lookup map for getting a day from an abbreviation
-        private static final Map<Integer, Reason> lookup = new HashMap<Integer, Reason>();
 
-        static {
-            for (final Reason reason : Reason.values()) {
-                lookup.put(reason.nr(), reason);
-            }
+    public static class ClientSig {
+
+        private String clientSignatureR;
+        private String clientSignatureS;
+
+        public ClientSig clientSignatureR(String clientSignatureR) {
+            this.clientSignatureR = clientSignatureR;
+            return this;
         }
-        
-        private Reason(final int reason) {
-            this.reason = reason;
+
+        public String clientSignatureR() {
+            return clientSignatureR;
         }
-        
-        public int nr() {
-            return reason;
+
+        public ClientSig clientSignatureS(String clientSignatureS) {
+            this.clientSignatureS = clientSignatureS;
+            return this;
         }
-        
-        public static Reason get(final int nr) {
-            return lookup.get(nr);
+
+        public String clientSignatureS() {
+            return clientSignatureS;
         }
     }
-    
-    private boolean success = false;
+
+
+public enum Reason {
+    SERVER_ERROR(-1),
+    REASON_NOT_FOUND(-2),
+    KEYS_NOT_FOUND(-3);
+
+    private final int reason;
+    // Reverse-lookup map for getting a day from an abbreviation
+    private static final Map<Integer, Reason> lookup = new HashMap<Integer, Reason>();
+
+    static {
+        for (final Reason reason : Reason.values()) {
+            lookup.put(reason.nr(), reason);
+        }
+    }
+
+    private Reason(final int reason) {
+        this.reason = reason;
+    }
+
+    public int nr() {
+        return reason;
+    }
+
+    public static Reason get(final int nr) {
+        return lookup.get(nr);
+    }
+}
+
+private boolean success = false;
     private int reason = 0;
     private String message;
     private String refundTransaction;
-    private String clientSignatureR;
-    private String clientSignatureS;
     private String clientPublicKey;
+    private List<ClientSig> clientSignatures;
     
     public RefundTO success(final boolean success) {
         this.success = success;
@@ -91,22 +116,13 @@ public class RefundTO {
         return refundTransaction;
     }
     
-    public RefundTO clientSignatureR(String clientSignatureR) {
-        this.clientSignatureR = clientSignatureR;
+    public RefundTO clientSignatureR(List<ClientSig> clientSignatures) {
+        this.clientSignatures = clientSignatures;
         return this;
     }
     
-    public String clientSignatureR() {
-        return clientSignatureR;
-    }
-    
-    public RefundTO clientSignatureS(String clientSignatureS) {
-        this.clientSignatureS = clientSignatureS;
-        return this;
-    }
-    
-    public String clientSignatureS() {
-        return clientSignatureS;
+    public List<ClientSig> clientSignatures() {
+        return clientSignatures;
     }
     
     public RefundTO clientPublicKey(String clientPublicKey) {
