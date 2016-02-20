@@ -45,6 +45,7 @@ public class KeyTO {
     private boolean success = false;
     private int reason = 0;
     private String message;
+    //TODO: use something like: https://gist.github.com/orip/3635246
     private String publicKey;
     
     public KeyTO success(final boolean success) {
