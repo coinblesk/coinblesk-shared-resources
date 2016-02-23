@@ -53,7 +53,7 @@ public class PrepareHalfSignTO {
     private byte[] halfSignedTransaction;
     private byte[] clientPublicKey;
     private Long amountToSpend;
-    private byte[] p2shAddress;
+    private String p2shAddress;
     private List<RefundP2shTO.TxSig> signatures;
 
     public PrepareHalfSignTO success(final boolean success) {
@@ -115,12 +115,12 @@ public class PrepareHalfSignTO {
         return amountToSpend;
     }
     
-    public PrepareHalfSignTO p2shAddress(byte[] p2shAddress) {
+    public PrepareHalfSignTO p2shAddress(String p2shAddress) {
         this.p2shAddress = p2shAddress;
         return this;
     }
     
-    public byte[] p2shAddress() {
+    public String p2shAddress() {
         return p2shAddress;
     }
     

@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * @author draft
  */
-public class CompleteSign {
+public class CompleteSignTO {
 
     public enum Reason {
         SERVER_ERROR(-1),
@@ -49,12 +49,12 @@ public class CompleteSign {
     private byte[] fullSignedTransaction;
     private byte[] clientPublicKey;
 
-    public CompleteSign success(final boolean success) {
+    public CompleteSignTO success(final boolean success) {
         this.success = success;
         return this;
     }
 
-    public CompleteSign setSuccess() {
+    public CompleteSignTO setSuccess() {
         return success(true);
     }
 
@@ -62,17 +62,17 @@ public class CompleteSign {
         return success;
     }
 
-    public CompleteSign reason(final CompleteSign.Reason reason) {
+    public CompleteSignTO reason(final CompleteSignTO.Reason reason) {
         this.reason = reason.nr();
         return this;
     }
 
-    public CompleteSign.Reason reason() {
-        final CompleteSign.Reason reason = CompleteSign.Reason.get(this.reason);
-        return reason == null ? CompleteSign.Reason.REASON_NOT_FOUND : reason;
+    public CompleteSignTO.Reason reason() {
+        final CompleteSignTO.Reason reason = CompleteSignTO.Reason.get(this.reason);
+        return reason == null ? CompleteSignTO.Reason.REASON_NOT_FOUND : reason;
     }
 
-    public CompleteSign message(final String message) {
+    public CompleteSignTO message(final String message) {
         this.message = message;
         return this;
     }
@@ -81,7 +81,7 @@ public class CompleteSign {
         return message;
     }
 
-    public CompleteSign fullSignedTransaction(byte[] fullSignedTransaction) {
+    public CompleteSignTO fullSignedTransaction(byte[] fullSignedTransaction) {
         this.fullSignedTransaction = fullSignedTransaction;
         return this;
     }
@@ -90,7 +90,7 @@ public class CompleteSign {
         return fullSignedTransaction;
     }
 
-    public CompleteSign clientPublicKey(byte[] clientPublicKey) {
+    public CompleteSignTO clientPublicKey(byte[] clientPublicKey) {
         this.clientPublicKey = clientPublicKey;
         return this;
     }

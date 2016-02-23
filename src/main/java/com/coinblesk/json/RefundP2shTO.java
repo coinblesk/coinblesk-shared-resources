@@ -71,7 +71,7 @@ public enum Reason {
 private boolean success = false;
     private int reason = 0;
     private String message;
-    private List<byte[]> transactionOutputs;
+    private List<byte[]> transactionOutpoints;
     private String clientPublicKey;
     private List<TxSig> refundSignatures;
     private byte[] fullRefundTransaction;
@@ -108,13 +108,13 @@ private boolean success = false;
         return message;
     }
     
-    public RefundP2shTO refundTransaction(List<byte[]> transactionOutputs) {
-        this.transactionOutputs = transactionOutputs;
+    public RefundP2shTO transactionOutpoints(List<byte[]> transactionOutpoints) {
+        this.transactionOutpoints = transactionOutpoints;
         return this;
     }
     
-    public List<byte[]> transactionOutputs() {
-        return transactionOutputs;
+    public List<byte[]> transactionOutpoints() {
+        return transactionOutpoints;
     }
     
     public RefundP2shTO refundSignatures(List<TxSig> refundSignatures) {
