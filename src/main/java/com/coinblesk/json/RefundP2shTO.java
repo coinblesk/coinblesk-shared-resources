@@ -79,6 +79,7 @@ private boolean success = false;
     private List<TxSig> refundSignaturesServer;
     private byte[] fullRefundTransactionClient;
     private byte[] fullRefundTransactionMerchant;
+    private byte[] halfSignedTransaction;
     
     public RefundP2shTO success(final boolean success) {
         this.success = success;
@@ -182,5 +183,14 @@ private boolean success = false;
 
     public byte[] fullRefundTransactionMerchant() {
         return fullRefundTransactionMerchant;
+    }
+    
+    public RefundP2shTO halfSignedTransaction(byte[] halfSignedTransaction) {
+        this.halfSignedTransaction = halfSignedTransaction;
+        return this;
+    }
+
+    public byte[] halfSignedTransaction() {
+        return halfSignedTransaction;
     }
 }
