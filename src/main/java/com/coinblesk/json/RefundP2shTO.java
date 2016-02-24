@@ -72,9 +72,13 @@ private boolean success = false;
     private int reason = 0;
     private String message;
     private List<byte[]> transactionOutpoints;
-    private String clientPublicKey;
-    private List<TxSig> refundSignatures;
-    private byte[] fullRefundTransaction;
+    private byte[] clientPublicKey;
+    private byte[] merchantPublicKey;
+    private List<TxSig> refundSignaturesClient;
+    private List<TxSig> refundSignaturesMerchant;
+    private List<TxSig> refundSignaturesServer;
+    private byte[] fullRefundTransactionClient;
+    private byte[] fullRefundTransactionMerchant;
     
     public RefundP2shTO success(final boolean success) {
         this.success = success;
@@ -117,30 +121,66 @@ private boolean success = false;
         return transactionOutpoints;
     }
     
-    public RefundP2shTO refundSignatures(List<TxSig> refundSignatures) {
-        this.refundSignatures = refundSignatures;
+    public RefundP2shTO refundSignaturesClient(List<TxSig> refundSignaturesClient) {
+        this.refundSignaturesClient = refundSignaturesClient;
         return this;
     }
     
-    public List<TxSig> refundSignatures() {
-        return refundSignatures;
+    public List<TxSig> refundSignaturesClient() {
+        return refundSignaturesClient;
     }
     
-    public RefundP2shTO clientPublicKey(String clientPublicKey) {
+    public RefundP2shTO refundSignaturesMerchant(List<TxSig> refundSignaturesMerchant) {
+        this.refundSignaturesMerchant = refundSignaturesMerchant;
+        return this;
+    }
+    
+    public List<TxSig> refundSignaturesMerchant() {
+        return refundSignaturesMerchant;
+    }
+    
+    public RefundP2shTO refundSignaturesServer(List<TxSig> refundSignaturesServer) {
+        this.refundSignaturesServer = refundSignaturesServer;
+        return this;
+    }
+    
+    public List<TxSig> refundSignaturesServer() {
+        return refundSignaturesServer;
+    }
+    
+    public RefundP2shTO clientPublicKey(byte[] clientPublicKey) {
         this.clientPublicKey = clientPublicKey;
         return this;
     }
     
-    public String clientPublicKey() {
+    public byte[] clientPublicKey() {
         return clientPublicKey;
     }
     
-    public RefundP2shTO fullRefundTransaction(byte[] fullRefundTransaction) {
-        this.fullRefundTransaction = fullRefundTransaction;
+    public RefundP2shTO merchantPublicKey(byte[] merchantPublicKey) {
+        this.merchantPublicKey = merchantPublicKey;
+        return this;
+    }
+    
+    public byte[] merchantPublicKey() {
+        return merchantPublicKey;
+    }
+    
+    public RefundP2shTO fullRefundTransactionClient(byte[] fullRefundTransactionClient) {
+        this.fullRefundTransactionClient = fullRefundTransactionClient;
         return this;
     }
 
-    public byte[] fullRefundTransaction() {
-        return fullRefundTransaction;
+    public byte[] fullRefundTransactionClient() {
+        return fullRefundTransactionClient;
+    }
+    
+    public RefundP2shTO fullRefundTransactionMerchant(byte[] fullRefundTransactionMerchant) {
+        this.fullRefundTransactionMerchant = fullRefundTransactionMerchant;
+        return this;
+    }
+
+    public byte[] fullRefundTransactionMerchant() {
+        return fullRefundTransactionMerchant;
     }
 }
