@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
@@ -37,9 +36,9 @@ public class BitcoinUtils {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
     
-    public static Transaction generateUnsignedRefundTx(NetworkParameters params,
-            LinkedHashMap<TransactionOutPoint, Coin> outputsToUse, 
-            Address refundSentTo, Script redeemScript, int lockTime) {
+    public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
+            final LinkedHashMap<TransactionOutPoint, Coin> outputsToUse, 
+            final Address refundSentTo, final Script redeemScript, final int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
         
@@ -49,6 +48,24 @@ public class BitcoinUtils {
             refundTransaction.addInput(ti);
             remainingAmount += entry.getValue().longValue();
         }
+        return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
+    }
+    
+    public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
+            final List<TransactionOutput> outputsToUse, 
+            final Address refundSentTo, final int lockTime) {
+        final Transaction refundTransaction = new Transaction(params);
+        long remainingAmount = 0;
+        
+        for(final TransactionOutput transactionOutput:outputsToUse) {  
+            refundTransaction.addInput(transactionOutput);
+            remainingAmount += transactionOutput.getValue().longValue();
+        }
+        return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
+    }
+    
+    private static Transaction finishUnsignedRefundTx(final Transaction refundTransaction, 
+            long remainingAmount, final Address refundSentTo, final int lockTime) {
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
@@ -92,6 +109,14 @@ public class BitcoinUtils {
         return true;
     }
     
+    public static List<TransactionOutPoint> outpoints(final Transaction tx) {
+        final List<TransactionOutPoint> transactionOutPoints = new ArrayList<>(tx.getInputs().size());
+        for(final TransactionInput transactionInput:tx.getInputs()) {
+            transactionOutPoints.add(transactionInput.getOutpoint());
+        }
+        return transactionOutPoints;
+    }
+    
     public static LinkedHashMap<TransactionOutPoint, Coin> mergeOutPointsValue(
             List<TransactionOutPoint> outpoins, List<TransactionOutput> outputs) {
         if(outpoins.size() != outputs.size()) {
@@ -116,7 +141,11 @@ public class BitcoinUtils {
             boolean safeToAdd = true;
             if(!isOurP2SHAddress(params, transactionOutput, ourAddress)) {
                 continue;
-            } 
+            }
+            if(halfSignedTx == null) {
+                newOutputs.add(transactionOutput);
+                continue;
+            }
             for(TransactionInput input:halfSignedTx.getInputs()) {
                 //if we create a transaction locally, and we use addInput(), the parentTransaction will be set for the 
                 //TransactionInput and also the fromTx from in the TransactionOutPoint. input.getConnectedOutput()
@@ -216,5 +245,52 @@ public class BitcoinUtils {
             }
         }
         return new Pair<>(refundTransaction, serverSigs);
+    }
+    
+    public static Transaction createTx(
+            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom, 
+            Address p2shAddressTo, long amountToSpend, Script redeemScript) {
+        
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+        for(TransactionOutput output:outputs) {
+            if(isOurP2SHAddress(params, output, p2shAddressFrom)) {
+                tx.addInput(output);
+                totalAmount += output.getValue().value;
+            }
+        }
+         
+        totalAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
+        if(amountToSpend > totalAmount) {
+            return null;
+        }
+        long remainingAmount = totalAmount - amountToSpend;
+        
+        TransactionOutput transactionOutputRecipient = 
+                new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+        if(!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputRecipient);
+        }
+        
+        TransactionOutput transactionOutputChange = 
+                new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
+        if(!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputChange); //back to sender
+        }
+       
+        if(tx.getOutputs().isEmpty()) {
+            return null;
+        }
+        
+        //rest is tx fee
+        //TODO: add outputs to DB to pendingOutputs that will become valid, make sure these p2sh address came from us!
+        //if(clientKeyService.containsP2SH(p2shAddressTo)) {
+           //add to pending output 
+        //}
+        //TODO: update spentoutputs -> all inputs of this tx are now unspendable (double spending)
+        //TODO: this and the above double spending must be in a transaction!!
+        
+        return tx;
+        //sign
     }
 }
