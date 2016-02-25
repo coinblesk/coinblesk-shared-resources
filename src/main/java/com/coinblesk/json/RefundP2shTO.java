@@ -43,7 +43,8 @@ public class RefundP2shTO {
 public enum Reason {
     SERVER_ERROR(-1),
     REASON_NOT_FOUND(-2),
-    KEYS_NOT_FOUND(-3);
+    KEYS_NOT_FOUND(-3),
+    NOT_ENOUGH_FUNDS(-4);
 
     private final int reason;
     // Reverse-lookup map for getting a day from an abbreviation
