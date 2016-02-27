@@ -31,7 +31,8 @@ public enum Type {
         INVALID_EMAIL_TOKEN(-11),
         NO_ACCOUNT(-12),
         ACCOUNT_ERROR(-13),
-        NO_HASH_KEY(-14);
+        NO_HASH_KEY(-14),
+        DOUBLE_SPENDING(-15);
         
         private final int type;
         // Reverse-lookup map for getting a day from an abbreviation

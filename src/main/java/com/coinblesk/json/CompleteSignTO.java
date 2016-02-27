@@ -13,6 +13,7 @@ public class CompleteSignTO extends BaseTO<CompleteSignTO> {
 
     private byte[] fullSignedTransaction;
     private byte[] clientPublicKey;
+    private byte[] merchantPublicKey;
 
     public CompleteSignTO fullSignedTransaction(byte[] fullSignedTransaction) {
         this.fullSignedTransaction = fullSignedTransaction;
@@ -30,5 +31,14 @@ public class CompleteSignTO extends BaseTO<CompleteSignTO> {
 
     public byte[] clientPublicKey() {
         return clientPublicKey;
+    }
+    
+    public CompleteSignTO merchantPublicKey(byte[] merchantPublicKey) {
+        this.merchantPublicKey = merchantPublicKey;
+        return this;
+    }
+
+    public byte[] merchantPublicKey() {
+        return merchantPublicKey;
     }
 }
