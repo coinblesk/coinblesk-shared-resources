@@ -7,9 +7,9 @@ package com.coinblesk.json;
 
 /**
  *
- * @author draft
+ * @author Thomas Bocek
  */
-public class UserAccountTO {
+public class UserAccountTO extends BaseTO<UserAccountTO> {
     private String email;
     private String password;
     

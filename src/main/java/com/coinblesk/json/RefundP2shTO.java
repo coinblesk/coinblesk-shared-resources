@@ -5,122 +5,33 @@
  */
 package com.coinblesk.json;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
- * @author draft
+ * @author Thomas Bocek
  */
-public class RefundP2shTO {
+public class RefundP2shTO extends BaseTO<RefundP2shTO> {
 
-    public static class TxSig {
-
-        private String clientSignatureR;
-        private String clientSignatureS;
-
-        public TxSig clientSignatureR(String clientSignatureR) {
-            this.clientSignatureR = clientSignatureR;
-            return this;
-        }
-
-        public String clientSignatureR() {
-            return clientSignatureR;
-        }
-
-        public TxSig clientSignatureS(String clientSignatureS) {
-            this.clientSignatureS = clientSignatureS;
-            return this;
-        }
-
-        public String clientSignatureS() {
-            return clientSignatureS;
-        }
-    }
-
-
-public enum Reason {
-    SERVER_ERROR(-1),
-    REASON_NOT_FOUND(-2),
-    KEYS_NOT_FOUND(-3),
-    NOT_ENOUGH_FUNDS(-4);
-
-    private final int reason;
-    // Reverse-lookup map for getting a day from an abbreviation
-    private static final Map<Integer, Reason> lookup = new HashMap<Integer, Reason>();
-
-    static {
-        for (final Reason reason : Reason.values()) {
-            lookup.put(reason.nr(), reason);
-        }
-    }
-
-    private Reason(final int reason) {
-        this.reason = reason;
-    }
-
-    public int nr() {
-        return reason;
-    }
-
-    public static Reason get(final int nr) {
-        return lookup.get(nr);
-    }
-}
-
-private boolean success = false;
-    private int reason = 0;
-    private String message;
-    private List<byte[]> transactionOutpoints;
+    private List<byte[]> refundClientOutpoints;
     private byte[] clientPublicKey;
     private byte[] merchantPublicKey;
+    
     private List<TxSig> refundSignaturesClient;
     private List<TxSig> refundSignaturesMerchant;
-    private List<TxSig> refundSignaturesServer;
+    private List<TxSig> refundSignaturesClientServer;
     private byte[] fullRefundTransactionClient;
     private byte[] fullRefundTransactionMerchant;
-    private byte[] halfSignedTransaction;
+    private byte[] unsignedTransaction;
+    private byte[] unsignedRefundMerchantTransaction;
     
-    public RefundP2shTO success(final boolean success) {
-        this.success = success;
+    public RefundP2shTO refundClientOutpoints(List<byte[]> refundClientOutpoints) {
+        this.refundClientOutpoints = refundClientOutpoints;
         return this;
     }
     
-    public RefundP2shTO setSuccess() {
-        return success(true);
-    }
-    
-    public boolean isSuccess() {
-        return success;
-    }
-    
-    public RefundP2shTO reason(final RefundP2shTO.Reason reason) {
-        this.reason = reason.nr();
-        return this;
-    }
-    
-    public RefundP2shTO.Reason reason() {
-        final RefundP2shTO.Reason reason = RefundP2shTO.Reason.get(this.reason);
-        return reason == null ? RefundP2shTO.Reason.REASON_NOT_FOUND : reason;
-    }
-    
-    public RefundP2shTO message(final String message) {
-        this.message = message;
-        return this;
-    }
-    
-    public String message() {
-        return message;
-    }
-    
-    public RefundP2shTO transactionOutpoints(List<byte[]> transactionOutpoints) {
-        this.transactionOutpoints = transactionOutpoints;
-        return this;
-    }
-    
-    public List<byte[]> transactionOutpoints() {
-        return transactionOutpoints;
+    public List<byte[]> refundClientOutpoints() {
+        return refundClientOutpoints;
     }
     
     public RefundP2shTO refundSignaturesClient(List<TxSig> refundSignaturesClient) {
@@ -141,13 +52,13 @@ private boolean success = false;
         return refundSignaturesMerchant;
     }
     
-    public RefundP2shTO refundSignaturesServer(List<TxSig> refundSignaturesServer) {
-        this.refundSignaturesServer = refundSignaturesServer;
+    public RefundP2shTO refundSignaturesClientServer(List<TxSig> refundSignaturesClientServer) {
+        this.refundSignaturesClientServer = refundSignaturesClientServer;
         return this;
     }
     
-    public List<TxSig> refundSignaturesServer() {
-        return refundSignaturesServer;
+    public List<TxSig> refundSignaturesClientServer() {
+        return refundSignaturesClientServer;
     }
     
     public RefundP2shTO clientPublicKey(byte[] clientPublicKey) {
@@ -186,12 +97,23 @@ private boolean success = false;
         return fullRefundTransactionMerchant;
     }
     
-    public RefundP2shTO halfSignedTransaction(byte[] halfSignedTransaction) {
-        this.halfSignedTransaction = halfSignedTransaction;
+    public RefundP2shTO unsignedTransaction(byte[] unsignedTransaction) {
+        this.unsignedTransaction = unsignedTransaction;
         return this;
     }
 
-    public byte[] halfSignedTransaction() {
-        return halfSignedTransaction;
+    public byte[] unsignedTransaction() {
+        return unsignedTransaction;
     }
+    
+    public RefundP2shTO unsignedRefundMerchantTransaction(byte[] unsignedRefundMerchantTransaction) {
+        this.unsignedRefundMerchantTransaction = unsignedRefundMerchantTransaction;
+        return this;
+    }
+
+    public byte[] unsignedRefundMerchantTransaction() {
+        return unsignedRefundMerchantTransaction;
+    }
+    
+    
 }

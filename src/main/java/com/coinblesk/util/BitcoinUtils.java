@@ -29,57 +29,57 @@ import org.bitcoinj.script.ScriptBuilder;
  * @author draft
  */
 public class BitcoinUtils {
-    
+
     final static public int BLOCKS_PER_DAY = 24 * 6;
-    
+
     public static int lockTimeBlock(int nowInDays, int currentHeight) {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
-    
+
     public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            final LinkedHashMap<TransactionOutPoint, Coin> outputsToUse, 
+            final LinkedHashMap<TransactionOutPoint, Coin> outputsToUse,
             final Address refundSentTo, final Script redeemScript, final int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
-        
-        for(final Map.Entry<TransactionOutPoint, Coin> entry:outputsToUse.entrySet()) {  
-            final TransactionInput ti = new TransactionInput(params, null, 
+
+        for (final Map.Entry<TransactionOutPoint, Coin> entry : outputsToUse.entrySet()) {
+            final TransactionInput ti = new TransactionInput(params, null,
                     redeemScript.getProgram(), entry.getKey(), entry.getValue());
             refundTransaction.addInput(ti);
             remainingAmount += entry.getValue().longValue();
         }
         return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
     }
-    
+
     public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            final List<TransactionOutput> outputsToUse, 
+            final List<TransactionOutput> outputsToUse,
             final Address refundSentTo, final int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
-        
-        for(final TransactionOutput transactionOutput:outputsToUse) {  
+
+        for (final TransactionOutput transactionOutput : outputsToUse) {
             refundTransaction.addInput(transactionOutput);
             remainingAmount += transactionOutput.getValue().longValue();
         }
         return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
     }
-    
-    private static Transaction finishUnsignedRefundTx(final Transaction refundTransaction, 
+
+    private static Transaction finishUnsignedRefundTx(final Transaction refundTransaction,
             long remainingAmount, final Address refundSentTo, final int lockTime) {
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
-        if(amountToSpend.isLessThan(transactionOutput.getMinNonDustValue())) {
+        if (amountToSpend.isLessThan(transactionOutput.getMinNonDustValue())) {
             return null;
         }
         refundTransaction.setLockTime(lockTime);
         return refundTransaction;
     }
-    
+
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
         final int len = tx.getInputs().size();
         final List<TransactionSignature> signatures = new ArrayList<>(len);
-        for(int i=0;i<len;i++) {
+        for (int i = 0; i < len; i++) {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(
                     signKey.sign(sighash), Transaction.SigHash.ALL, false);
@@ -87,17 +87,17 @@ public class BitcoinUtils {
         }
         return signatures;
     }
-    
-    public static boolean applySignatures(Transaction tx, Script redeemScript, 
+
+    public static boolean applySignatures(Transaction tx, Script redeemScript,
             List<TransactionSignature> signatures1, List<TransactionSignature> signatures2) {
         final int len = tx.getInputs().size();
-        if(len != signatures1.size()) {
+        if (len != signatures1.size()) {
             return false;
         }
-        if(len != signatures2.size()) {
+        if (len != signatures2.size()) {
             return false;
         }
-        for(int i=0;i<len;i++) {
+        for (int i = 0; i < len; i++) {
             List<TransactionSignature> tmp = new ArrayList<>(2);
             final TransactionSignature signature1 = signatures1.get(i);
             final TransactionSignature signature2 = signatures2.get(i);
@@ -108,134 +108,119 @@ public class BitcoinUtils {
         }
         return true;
     }
-    
-    public static List<TransactionOutPoint> outpoints(final Transaction tx) {
+
+    public static List<TransactionOutPoint> outpointsFromInput(final Transaction tx) {
         final List<TransactionOutPoint> transactionOutPoints = new ArrayList<>(tx.getInputs().size());
-        for(final TransactionInput transactionInput:tx.getInputs()) {
+        for (final TransactionInput transactionInput : tx.getInputs()) {
             transactionOutPoints.add(transactionInput.getOutpoint());
         }
         return transactionOutPoints;
     }
-    
-    public static LinkedHashMap<TransactionOutPoint, Coin> mergeOutPointsValue(
-            List<TransactionOutPoint> outpoins, List<TransactionOutput> outputs) {
-        if(outpoins.size() != outputs.size()) {
+
+    public static List<TransactionOutPoint> outpointsFromOutputFor(NetworkParameters params, final Transaction tx, final Address p2shAddress) {
+        //will be less than list.size
+        final List<TransactionOutPoint> transactionOutPoints = new ArrayList<>(tx.getOutputs().size());
+        for (final TransactionOutput transactionOutput : tx.getOutputs()) {
+            if (transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+                transactionOutPoints.add(transactionOutput.getOutPointFor());
+            }
+        }
+        return transactionOutPoints;
+
+    }
+
+    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
+            List<TransactionOutPoint> outpoints, List<TransactionOutput> outputs) {
+        if (outpoints.size() != outputs.size()) {
             return null;
         }
         LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
         Iterator<TransactionOutput> itOut = outputs.iterator();
-        Iterator<TransactionOutPoint> itOutPoint = outpoins.iterator();
-        while(itOut.hasNext() && itOutPoint.hasNext()) {
+        Iterator<TransactionOutPoint> itOutPoint = outpoints.iterator();
+        while (itOut.hasNext() && itOutPoint.hasNext()) {
             merged.put(itOutPoint.next(), itOut.next().getValue());
         }
-        
+
         return merged;
     }
-    
-    public static List<TransactionOutput> mergeOutputs(NetworkParameters params, Transaction halfSignedTx, 
-            List<TransactionOutput> walletOutputs, Address ourAddress, 
-            Function<TransactionOutPoint, TransactionOutput> findParentOutput) throws Exception {
+
+    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
+            List<TransactionOutPoint> outpoints, Transaction tx) {
+        Sha256Hash txHash = tx.getHash();
+        LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
+        for (TransactionOutPoint outpoint : outpoints) {
+            //we assume this is the right tx, we cannot compare the hash, as we don't have the full tx yet
+            merged.put(outpoint, tx.getOutput(outpoint.getIndex()).getValue());
+        }
+        return merged;
+    }
+
+    public static List<TransactionOutput> mergeOutputs(NetworkParameters params, Transaction halfSignedTx,
+            List<TransactionOutput> walletOutputs, Address ourAddress) throws Exception {
         //first remove the outputs from walletOutput that are/will be burned by halfSignedTx
         final List<TransactionOutput> newOutputs = new ArrayList<>(walletOutputs.size());
-        for(TransactionOutput transactionOutput:walletOutputs) {
+        for (TransactionOutput transactionOutput : walletOutputs) {
             boolean safeToAdd = true;
-            if(!isOurP2SHAddress(params, transactionOutput, ourAddress)) {
+            if (!isOurP2SHAddress(params, transactionOutput, ourAddress)) {
                 continue;
             }
-            if(halfSignedTx == null) {
+            if (halfSignedTx == null) {
                 newOutputs.add(transactionOutput);
                 continue;
             }
-            for(TransactionInput input:halfSignedTx.getInputs()) {
-                //if we create a transaction locally, and we use addInput(), the parentTransaction will be set for the 
-                //TransactionInput and also the fromTx from in the TransactionOutPoint. input.getConnectedOutput()
-                //uses fromTx, and if we have Bitcoin serialzied Tx, then we don't have this. There is the possibility
-                //to call TransactionInput.connect, but this marks the Output as spent, so we would need to unmark it.
-                //a better way is to search after the parent transaction for ourselfs and get the potentially burned output
-                TransactionOutput burnedOutput = input.getConnectedOutput();
-                //not connect, search manually
-                if(burnedOutput == null) {
-                    burnedOutput = findParentOutput.apply(input.getOutpoint());
-                }
-                if(burnedOutput == null) {
-                    //something is fishy, we should be able to connect that output
-                    throw new CoinbleskException("we should be able to connect that output! "
-                            + "Its detached an we don't know if we can spend it");
-                }
-                if(transactionOutput.equals(burnedOutput)) {
+            for (TransactionInput input : halfSignedTx.getInputs()) {
+                //check if this input is connected the an output from the wallet
+                if (transactionOutput.getOutPointFor().equals(input.getOutpoint())) {
                     safeToAdd = false;
                     break;
                 }
             }
-            
-            if(safeToAdd) {
+
+            if (safeToAdd) {
                 newOutputs.add(transactionOutput);
             }
         }
-        
+
         //then add the outputs from the halfSignedTx that will be available in the future
-        for(TransactionOutput transactionOutput:halfSignedTx.getOutputs()) {
-            if(isOurP2SHAddress(params, transactionOutput, ourAddress)) {
+        for (TransactionOutput transactionOutput : halfSignedTx.getOutputs()) {
+            if (isOurP2SHAddress(params, transactionOutput, ourAddress)) {
                 newOutputs.add(transactionOutput);
             }
         }
         return newOutputs;
     }
-    
+
     private static boolean isOurP2SHAddress(NetworkParameters params, TransactionOutput to, Address ourAddress) {
         final Address a = to.getAddressFromP2SH(params);
-        if(a != null && a.equals(ourAddress)) {
+        if (a != null && a.equals(ourAddress)) {
             return true;
         }
         return false;
     }
-    
-    /*public static List<TransactionSignature> fullySign(Transaction tx, Script redeemScript, ECKey signKey, 
-            List<TransactionSignature> existingSignatures) {
-        final int len = tx.getInputs().size();
-        if(len != existingSignatures.size()) {
-            return null;
-        }
-        final List<TransactionSignature> newSignatures = new ArrayList<>(len);
-        for(int i=0;i<len;i++) {
-            final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
-            final TransactionSignature newSignature = new TransactionSignature(
-                    signKey.sign(sighash), Transaction.SigHash.ALL, false);
-            newSignatures.add(newSignature);
-            
-            List<TransactionSignature> tmp = new ArrayList<>(2);
-            final TransactionSignature existingSignature = existingSignatures.get(i);
-            tmp.add(existingSignature);
-            tmp.add(newSignature);
-            final Script refundTransactionInputScript = ScriptBuilder.createP2SHMultiSigInputScript(tmp, redeemScript);
-            tx.getInput(i).setScriptSig(refundTransactionInputScript);
-        
-        }
-    }*/
-    
-    public static Pair<Transaction,List<TransactionSignature>> generateRefundTx2(NetworkParameters params,
-            List<TransactionOutput> outputs, Address refund, Script redeemScript, ECKey ecKeyServer, 
+
+    public static Pair<Transaction, List<TransactionSignature>> generateRefundTx2(NetworkParameters params,
+            List<TransactionOutput> outputs, Address refund, Script redeemScript, ECKey ecKeyServer,
             List<TransactionOutPoint> points, List<TransactionSignature> clientSigs, int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         Coin remainingAmount = Coin.ZERO;
-        for(int i=0;i<outputs.size();i++) {
+        for (int i = 0; i < outputs.size(); i++) {
             TransactionOutput output = outputs.get(i);
             TransactionOutPoint outPoint = points.get(i);
             TransactionInput ti = new TransactionInput(params, null, redeemScript.getProgram(), outPoint, output.getValue());
             refundTransaction.addInput(ti);
             remainingAmount = remainingAmount.add(output.getValue());
         }
-        
+
         remainingAmount = remainingAmount.subtract(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
         refundTransaction.addOutput(remainingAmount, refund);
         refundTransaction.setLockTime(lockTime);
-        
+
         List<TransactionSignature> serverSigs = new ArrayList<>();
-        for(int i=0;i<refundTransaction.getInputs().size();i++) {
+        for (int i = 0; i < refundTransaction.getInputs().size(); i++) {
             final Sha256Hash sighash = refundTransaction.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(ecKeyServer.sign(sighash), Transaction.SigHash.ALL, false);
             serverSigs.add(serverSignature);
-            if(clientSigs != null) {
+            if (clientSigs != null) {
                 List<TransactionSignature> l = new ArrayList<>();
                 final TransactionSignature clientSignature = clientSigs.get(i);
                 l.add(clientSignature);
@@ -246,51 +231,42 @@ public class BitcoinUtils {
         }
         return new Pair<>(refundTransaction, serverSigs);
     }
-    
+
     public static Transaction createTx(
-            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom, 
+            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
             Address p2shAddressTo, long amountToSpend, Script redeemScript) {
-        
+
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
-        for(TransactionOutput output:outputs) {
-            if(isOurP2SHAddress(params, output, p2shAddressFrom)) {
+        for (TransactionOutput output : outputs) {
+            if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
                 tx.addInput(output);
                 totalAmount += output.getValue().value;
             }
         }
-         
+
         totalAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
-        if(amountToSpend > totalAmount) {
+        if (amountToSpend > totalAmount) {
             return null;
         }
         long remainingAmount = totalAmount - amountToSpend;
-        
-        TransactionOutput transactionOutputRecipient = 
-                new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
-        if(!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
+
+        TransactionOutput transactionOutputRecipient
+                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
             tx.addOutput(transactionOutputRecipient);
         }
-        
-        TransactionOutput transactionOutputChange = 
-                new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
-        if(!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
+
+        TransactionOutput transactionOutputChange
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
+        if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
         }
-       
-        if(tx.getOutputs().isEmpty()) {
+
+        if (tx.getOutputs().isEmpty()) {
             return null;
         }
-        
-        //rest is tx fee
-        //TODO: add outputs to DB to pendingOutputs that will become valid, make sure these p2sh address came from us!
-        //if(clientKeyService.containsP2SH(p2shAddressTo)) {
-           //add to pending output 
-        //}
-        //TODO: update spentoutputs -> all inputs of this tx are now unspendable (double spending)
-        //TODO: this and the above double spending must be in a transaction!!
-        
+
         return tx;
-        //sign
     }
 }

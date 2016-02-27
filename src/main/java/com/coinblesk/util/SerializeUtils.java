@@ -6,6 +6,7 @@
 package com.coinblesk.util;
 
 import com.coinblesk.json.RefundP2shTO;
+import com.coinblesk.json.TxSig;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,19 +20,19 @@ import org.bitcoinj.crypto.TransactionSignature;
  */
 public class SerializeUtils {
     
-    public static List<RefundP2shTO.TxSig> serializeSignatures(final List<TransactionSignature> signatures) {
-        final List<RefundP2shTO.TxSig> retVal = new ArrayList<>(signatures.size());
+    public static List<TxSig> serializeSignatures(final List<TransactionSignature> signatures) {
+        final List<TxSig> retVal = new ArrayList<>(signatures.size());
         for(final TransactionSignature signature:signatures) {
-            retVal.add(new RefundP2shTO.TxSig().clientSignatureR(
-                    signature.r.toString()).clientSignatureS(signature.s.toString()));
+            retVal.add(new TxSig().sigR(
+                    signature.r.toString()).sigS(signature.s.toString()));
         }
         return retVal;
     }
     
-    public static List<TransactionSignature> deserializeSignatures(final List<RefundP2shTO.TxSig> signatures) {
+    public static List<TransactionSignature> deserializeSignatures(final List<TxSig> signatures) {
         final List<TransactionSignature> retVal = new ArrayList<>(signatures.size());
-        for(final RefundP2shTO.TxSig txsig:signatures) {
-            retVal.add(new TransactionSignature(new BigInteger(txsig.clientSignatureR()), new BigInteger(txsig.clientSignatureS())));
+        for(final TxSig txsig:signatures) {
+            retVal.add(new TransactionSignature(new BigInteger(txsig.sigR()), new BigInteger(txsig.sigS())));
         }
         return retVal;
     }
