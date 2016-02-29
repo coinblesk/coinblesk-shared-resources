@@ -6,6 +6,9 @@
 package com.coinblesk.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -233,7 +236,7 @@ public class BitcoinUtils {
 
     public static Transaction createTx(
             NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
-            Address p2shAddressTo, long amountToSpend, Script redeemScript) {
+            Address p2shAddressTo, long amountToSpend) {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -268,4 +271,24 @@ public class BitcoinUtils {
 
         return tx;
     }
+    
+    public static List<TransactionOutput> sort(final List<TransactionOutput> unsorted) {
+        final List<TransactionOutput> copy = new ArrayList<TransactionOutput>(unsorted);
+        Collections.sort(copy, new Comparator<TransactionOutput>() {
+            @Override
+            public int compare(final TransactionOutput o1, final TransactionOutput o2) {
+                final byte[] left = o1.unsafeBitcoinSerialize();
+                final byte[] right = o2.unsafeBitcoinSerialize();
+                for (int i = 0, j = 0; i < left.length && j < right.length; i++, j++) {
+                    final int a = (left[i] & 0xff);
+                    final int b = (right[j] & 0xff);
+                    if (a != b) {
+                        return a - b;
+                    }
+                }
+                return left.length - right.length;       
+            }
+        });
+        return copy;
+     }
 }
