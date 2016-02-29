@@ -16,6 +16,7 @@ public class RefundTO extends BaseTO<RefundTO> {
     private byte[] clientPublicKey;
     private byte[] refundTransaction;
     private List<TxSig> clientSignatures;
+    private List<TxSig> serverSignatures;
     
     public RefundTO clientPublicKey(byte[] clientPublicKey) {
         this.clientPublicKey = clientPublicKey;
@@ -42,5 +43,14 @@ public class RefundTO extends BaseTO<RefundTO> {
     
     public List<TxSig> clientSignatures() {
         return clientSignatures;
+    }
+    
+    public RefundTO serverSignatures(List<TxSig> serverSignatures) {
+        this.serverSignatures = serverSignatures;
+        return this;
+    }
+    
+    public List<TxSig> serverSignatures() {
+        return serverSignatures;
     }
 }
