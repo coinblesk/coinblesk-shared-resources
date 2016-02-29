@@ -5,6 +5,7 @@
  */
 package com.coinblesk.util;
 
+import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,7 +55,7 @@ public class BitcoinUtils {
     }
 
     public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            final List<TransactionOutput> outputsToUse,
+            List<TransactionOutput> outputsToUse,
             final Address refundSentTo, final int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
@@ -68,6 +69,7 @@ public class BitcoinUtils {
 
     private static Transaction finishUnsignedRefundTx(final Transaction refundTransaction,
             long remainingAmount, final Address refundSentTo, final int lockTime) {
+        sortTransactionInputs(refundTransaction);
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
@@ -148,7 +150,6 @@ public class BitcoinUtils {
 
     public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
             List<TransactionOutPoint> outpoints, Transaction tx) {
-        Sha256Hash txHash = tx.getHash();
         LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
         for (TransactionOutPoint outpoint : outpoints) {
             //we assume this is the right tx, we cannot compare the hash, as we don't have the full tx yet
@@ -200,53 +201,24 @@ public class BitcoinUtils {
         return false;
     }
 
-    public static Pair<Transaction, List<TransactionSignature>> generateRefundTx2(NetworkParameters params,
-            List<TransactionOutput> outputs, Address refund, Script redeemScript, ECKey ecKeyServer,
-            List<TransactionOutPoint> points, List<TransactionSignature> clientSigs, int lockTime) {
-        final Transaction refundTransaction = new Transaction(params);
-        Coin remainingAmount = Coin.ZERO;
-        for (int i = 0; i < outputs.size(); i++) {
-            TransactionOutput output = outputs.get(i);
-            TransactionOutPoint outPoint = points.get(i);
-            TransactionInput ti = new TransactionInput(params, null, redeemScript.getProgram(), outPoint, output.getValue());
-            refundTransaction.addInput(ti);
-            remainingAmount = remainingAmount.add(output.getValue());
-        }
-
-        remainingAmount = remainingAmount.subtract(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE);
-        refundTransaction.addOutput(remainingAmount, refund);
-        refundTransaction.setLockTime(lockTime);
-
-        List<TransactionSignature> serverSigs = new ArrayList<>();
-        for (int i = 0; i < refundTransaction.getInputs().size(); i++) {
-            final Sha256Hash sighash = refundTransaction.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
-            final TransactionSignature serverSignature = new TransactionSignature(ecKeyServer.sign(sighash), Transaction.SigHash.ALL, false);
-            serverSigs.add(serverSignature);
-            if (clientSigs != null) {
-                List<TransactionSignature> l = new ArrayList<>();
-                final TransactionSignature clientSignature = clientSigs.get(i);
-                l.add(clientSignature);
-                l.add(serverSignature);
-                final Script refundTransactionInputScript = ScriptBuilder.createP2SHMultiSigInputScript(l, redeemScript);
-                refundTransaction.getInput(i).setScriptSig(refundTransactionInputScript);
-            }
-        }
-        return new Pair<>(refundTransaction, serverSigs);
-    }
-
     public static Transaction createTx(
             NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
             Address p2shAddressTo, long amountToSpend) {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
+        
+        List<TransactionInput> unsorted = new ArrayList<TransactionInput>(outputs.size());
         for (TransactionOutput output : outputs) {
             if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
-                tx.addInput(output);
+                TransactionInput ti = tx.addInput(output);
                 totalAmount += output.getValue().value;
+                unsorted.add(ti);
             }
         }
-
+        //now make it deterministic
+        sortTransactionInputs(tx);
+       
         totalAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         if (amountToSpend > totalAmount) {
             return null;
@@ -272,7 +244,22 @@ public class BitcoinUtils {
         return tx;
     }
     
-    public static List<TransactionOutput> sort(final List<TransactionOutput> unsorted) {
+    public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
+         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
+          Collections.sort(copy, new Comparator<TransactionInput>() {
+            @Override
+            public int compare(final TransactionInput o1, final TransactionInput o2) {
+                int c = o1.getOutpoint().getHash().compareTo(o2.getOutpoint().getHash());
+                if(c!=0) {
+                    return c;
+                }
+                return Long.compare(o1.getOutpoint().getIndex(), o2.getOutpoint().getIndex());
+            }
+        });
+        return copy;
+    }
+    
+    public static List<TransactionOutput> sortOutputs(final List<TransactionOutput> unsorted) {
         final List<TransactionOutput> copy = new ArrayList<TransactionOutput>(unsorted);
         Collections.sort(copy, new Comparator<TransactionOutput>() {
             @Override
@@ -291,4 +278,14 @@ public class BitcoinUtils {
         });
         return copy;
      }
+
+    private static void sortTransactionInputs(Transaction tx) {
+         //now make it deterministic
+         List<TransactionInput> sorted = sortInputs(tx.getInputs());
+         tx.clearInputs();
+         for(TransactionInput transactionInput:sorted) {
+             tx.addInput(transactionInput);
+         }
+         
+    }
 }
