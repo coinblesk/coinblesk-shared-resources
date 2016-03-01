@@ -5,6 +5,7 @@
  */
 package com.coinblesk.json;
 
+import com.coinblesk.util.Pair;
 import java.util.List;
 
 /**
@@ -13,25 +14,20 @@ import java.util.List;
  */
 public class RefundP2shTO extends BaseTO<RefundP2shTO> {
 
-    private List<byte[]> refundClientOutpoints;
+    private List<Pair<byte[],Long>> refundClientOutpointsCoinPair;
     private byte[] clientPublicKey;
-    private byte[] merchantPublicKey;
     
     private List<TxSig> refundSignaturesClient;
-    private List<TxSig> refundSignaturesMerchant;
-    private List<TxSig> refundSignaturesClientServer;
-    private byte[] fullRefundTransactionClient;
-    private byte[] fullRefundTransactionMerchant;
-    private byte[] unsignedTransaction;
-    private byte[] unsignedRefundMerchantTransaction;
+    private List<TxSig> refundSignaturesServer;
+    private byte[] fullRefundTransaction;
     
-    public RefundP2shTO refundClientOutpoints(List<byte[]> refundClientOutpoints) {
-        this.refundClientOutpoints = refundClientOutpoints;
+    public RefundP2shTO refundClientOutpointsCoinPair(List<Pair<byte[],Long>> refundClientOutpointsCoinPair) {
+        this.refundClientOutpointsCoinPair = refundClientOutpointsCoinPair;
         return this;
     }
     
-    public List<byte[]> refundClientOutpoints() {
-        return refundClientOutpoints;
+    public List<Pair<byte[],Long>> refundClientOutpointsCoinPair() {
+        return refundClientOutpointsCoinPair;
     }
     
     public RefundP2shTO refundSignaturesClient(List<TxSig> refundSignaturesClient) {
@@ -43,22 +39,13 @@ public class RefundP2shTO extends BaseTO<RefundP2shTO> {
         return refundSignaturesClient;
     }
     
-    public RefundP2shTO refundSignaturesMerchant(List<TxSig> refundSignaturesMerchant) {
-        this.refundSignaturesMerchant = refundSignaturesMerchant;
+    public RefundP2shTO refundSignaturesServer(List<TxSig> refundSignaturesServer) {
+        this.refundSignaturesServer = refundSignaturesServer;
         return this;
     }
     
-    public List<TxSig> refundSignaturesMerchant() {
-        return refundSignaturesMerchant;
-    }
-    
-    public RefundP2shTO refundSignaturesClientServer(List<TxSig> refundSignaturesClientServer) {
-        this.refundSignaturesClientServer = refundSignaturesClientServer;
-        return this;
-    }
-    
-    public List<TxSig> refundSignaturesClientServer() {
-        return refundSignaturesClientServer;
+    public List<TxSig> refundSignaturesServer() {
+        return refundSignaturesServer;
     }
     
     public RefundP2shTO clientPublicKey(byte[] clientPublicKey) {
@@ -70,50 +57,12 @@ public class RefundP2shTO extends BaseTO<RefundP2shTO> {
         return clientPublicKey;
     }
     
-    public RefundP2shTO merchantPublicKey(byte[] merchantPublicKey) {
-        this.merchantPublicKey = merchantPublicKey;
-        return this;
-    }
-    
-    public byte[] merchantPublicKey() {
-        return merchantPublicKey;
-    }
-    
-    public RefundP2shTO fullRefundTransactionClient(byte[] fullRefundTransactionClient) {
-        this.fullRefundTransactionClient = fullRefundTransactionClient;
+    public RefundP2shTO fullRefundTransaction(byte[] fullRefundTransaction) {
+        this.fullRefundTransaction = fullRefundTransaction;
         return this;
     }
 
-    public byte[] fullRefundTransactionClient() {
-        return fullRefundTransactionClient;
+    public byte[] fullRefundTransaction() {
+        return fullRefundTransaction;
     }
-    
-    public RefundP2shTO fullRefundTransactionMerchant(byte[] fullRefundTransactionMerchant) {
-        this.fullRefundTransactionMerchant = fullRefundTransactionMerchant;
-        return this;
-    }
-
-    public byte[] fullRefundTransactionMerchant() {
-        return fullRefundTransactionMerchant;
-    }
-    
-    public RefundP2shTO unsignedTransaction(byte[] unsignedTransaction) {
-        this.unsignedTransaction = unsignedTransaction;
-        return this;
-    }
-
-    public byte[] unsignedTransaction() {
-        return unsignedTransaction;
-    }
-    
-    public RefundP2shTO unsignedRefundMerchantTransaction(byte[] unsignedRefundMerchantTransaction) {
-        this.unsignedRefundMerchantTransaction = unsignedRefundMerchantTransaction;
-        return this;
-    }
-
-    public byte[] unsignedRefundMerchantTransaction() {
-        return unsignedRefundMerchantTransaction;
-    }
-    
-    
 }

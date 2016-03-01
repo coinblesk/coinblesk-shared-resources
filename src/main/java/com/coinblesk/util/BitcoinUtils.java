@@ -38,38 +38,43 @@ public class BitcoinUtils {
     public static int lockTimeBlock(int nowInDays, int currentHeight) {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
-
-    public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            final LinkedHashMap<TransactionOutPoint, Coin> outputsToUse,
-            final Address refundSentTo, final Script redeemScript, final int lockTime) {
-        final Transaction refundTransaction = new Transaction(params);
-        long remainingAmount = 0;
-
-        for (final Map.Entry<TransactionOutPoint, Coin> entry : outputsToUse.entrySet()) {
+    
+    public static List<TransactionInput> convertPointsToInputs(final NetworkParameters params,
+            final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript) {
+        final List<TransactionInput> retVal = new ArrayList<>();
+        for (final Pair<TransactionOutPoint, Coin> p:outputsToUse) {
             final TransactionInput ti = new TransactionInput(params, null,
-                    redeemScript.getProgram(), entry.getKey(), entry.getValue());
-            refundTransaction.addInput(ti);
-            remainingAmount += entry.getValue().longValue();
+                    redeemScript.getProgram(), p.element0(), p.element1());
+            retVal.add(ti);
         }
-        return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
+        return retVal;
     }
 
     public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            List<TransactionOutput> outputsToUse,
-            final Address refundSentTo, final int lockTime) {
+            final List<TransactionOutput> outputsToUse, List<TransactionInput> preBuiltInputs,
+            final Address refundSentTo, Script redeemScript, final int lockTime) {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
 
         for (final TransactionOutput transactionOutput : outputsToUse) {
-            refundTransaction.addInput(transactionOutput);
+            
+            TransactionInput ti = refundTransaction.addInput(transactionOutput);
+            ti.setScriptSig(redeemScript);
+            System.err.println("adding tx input1: "+ti);
             remainingAmount += transactionOutput.getValue().longValue();
         }
-        return finishUnsignedRefundTx(refundTransaction, remainingAmount, refundSentTo, lockTime);
-    }
-
-    private static Transaction finishUnsignedRefundTx(final Transaction refundTransaction,
-            long remainingAmount, final Address refundSentTo, final int lockTime) {
+        if(preBuiltInputs != null) {
+            for(TransactionInput input:preBuiltInputs) {
+                TransactionInput ti = refundTransaction.addInput(input);
+                System.err.println("adding tx input2: "+ti);
+                remainingAmount += input.getValue().longValue();
+            }
+        }
+        
         sortTransactionInputs(refundTransaction);
+        
+        System.err.println("adding tx inputs done: "+refundTransaction);
+        
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
@@ -113,20 +118,22 @@ public class BitcoinUtils {
         return true;
     }
 
-    public static List<TransactionOutPoint> outpointsFromInput(final Transaction tx) {
-        final List<TransactionOutPoint> transactionOutPoints = new ArrayList<>(tx.getInputs().size());
+    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromInput(final Transaction tx) {
+        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getInputs().size());
         for (final TransactionInput transactionInput : tx.getInputs()) {
-            transactionOutPoints.add(transactionInput.getOutpoint());
+            transactionOutPoints.add(new Pair<>(
+                    transactionInput.getOutpoint(), transactionInput.getValue()));
         }
         return transactionOutPoints;
     }
 
-    public static List<TransactionOutPoint> outpointsFromOutputFor(NetworkParameters params, final Transaction tx, final Address p2shAddress) {
+    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromOutputFor(NetworkParameters params, final Transaction tx, final Address p2shAddress) {
         //will be less than list.size
-        final List<TransactionOutPoint> transactionOutPoints = new ArrayList<>(tx.getOutputs().size());
+        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs().size());
         for (final TransactionOutput transactionOutput : tx.getOutputs()) {
             if (transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
-                transactionOutPoints.add(transactionOutput.getOutPointFor());
+                transactionOutPoints.add(new Pair<>(
+                        transactionOutput.getOutPointFor(), transactionOutput.getValue()));
             }
         }
         return transactionOutPoints;
@@ -242,6 +249,16 @@ public class BitcoinUtils {
         }
 
         return tx;
+    }
+    
+    public static List<TransactionOutput> myOutputs(NetworkParameters params, List<TransactionOutput> allOutputs, Address p2shAddress) {
+        final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size()/2);
+        for(TransactionOutput transactionOutput:allOutputs) {
+            if(transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+                myOutputs.add(transactionOutput);
+            }
+        }
+        return myOutputs;
     }
     
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
