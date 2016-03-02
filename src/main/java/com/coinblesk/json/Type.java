@@ -33,7 +33,13 @@ public enum Type {
         NO_ACCOUNT(-12),
         ACCOUNT_ERROR(-13),
         NO_HASH_KEY(-14),
-        DOUBLE_SPENDING(-15);
+        DOUBLE_SPENDING(-15),
+        BURNED_OUTPUTS(-16),
+        SIGNATURE_ERROR(-17),
+        REPLAY_ATTACK(-18),
+        OLD_TIME(-19),
+        INPUT_MISMATCH(-20);
+
         
         private final int type;
         // Reverse-lookup map for getting a day from an abbreviation

@@ -5,13 +5,18 @@
  */
 package com.coinblesk.util;
 
+import com.coinblesk.json.BaseTO;
 import com.coinblesk.json.RefundP2shTO;
 import com.coinblesk.json.TxSig;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.crypto.TransactionSignature;
 
@@ -20,6 +25,29 @@ import org.bitcoinj.crypto.TransactionSignature;
  * @author Thomas Bocek
  */
 public class SerializeUtils {
+    
+    private static final Gson GSON;
+
+    static {
+        GSON = new GsonBuilder().create();
+    }
+    
+    public static <K extends BaseTO> void addSig(K k, ECKey ecKey) {
+        k.messageSig(null);
+        String json = GSON.toJson(k);
+        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        ECKey.ECDSASignature sig = ecKey.sign(hash);
+        k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
+    }
+    
+    public static <K extends BaseTO> boolean verifySig(K k, ECKey ecKey) {
+        TxSig check = k.messageSig();
+        ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(check.sigR()), new BigInteger(check.sigS()));
+        k.messageSig(null);
+        String json = GSON.toJson(k);
+        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        return ecKey.verify(hash, sig);
+    }
     
     public static List<TxSig> serializeSignatures(final List<TransactionSignature> signatures) {
         final List<TxSig> retVal = new ArrayList<>(signatures.size());

@@ -5,6 +5,8 @@
  */
 package com.coinblesk.json;
 
+import org.bitcoinj.core.Address;
+
 /**
  *
  * @author Thomas Bocek
@@ -13,7 +15,7 @@ public class CompleteSignTO extends BaseTO<CompleteSignTO> {
 
     private byte[] fullSignedTransaction;
     private byte[] clientPublicKey;
-    private byte[] merchantPublicKey;
+    private String p2shAddressTo;
 
     public CompleteSignTO fullSignedTransaction(byte[] fullSignedTransaction) {
         this.fullSignedTransaction = fullSignedTransaction;
@@ -33,12 +35,12 @@ public class CompleteSignTO extends BaseTO<CompleteSignTO> {
         return clientPublicKey;
     }
     
-    public CompleteSignTO merchantPublicKey(byte[] merchantPublicKey) {
-        this.merchantPublicKey = merchantPublicKey;
+    public CompleteSignTO p2shAddressTo(String p2shAddressTo) {
+        this.p2shAddressTo = p2shAddressTo;
         return this;
     }
 
-    public byte[] merchantPublicKey() {
-        return merchantPublicKey;
+    public String p2shAddressTo() {
+        return p2shAddressTo;
     }
 }

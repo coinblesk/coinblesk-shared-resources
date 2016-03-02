@@ -13,16 +13,24 @@ import java.util.List;
  */
 public class PrepareHalfSignTO extends BaseTO<PrepareHalfSignTO> {
 
-    private byte[] clientPublicKey;
-    private long amountToSpend;
-    private String p2shAddressTo;
+    private byte[] clientPublicKey; //input
+    private long amountToSpend; //input
+    private String p2shAddressTo; //input
     //
-    private byte[] unsignedTransaction;
-    private List<TxSig> signatures;
+    private byte[] unsignedTransaction; //output
+    private List<TxSig> signatures; //output
 
     public PrepareHalfSignTO clientPublicKey(byte[] clientPublicKey) {
         this.clientPublicKey = clientPublicKey;
         return this;
+    }
+    
+    public boolean isInputSet() {
+        return super.isInputSet() && clientPublicKey != null && amountToSpend !=0 && p2shAddressTo != null;
+    }
+    
+    public boolean isOutputSet() {
+        return super.isOutputSet() && unsignedTransaction != null && signatures != null;
     }
 
     public byte[] clientPublicKey() {

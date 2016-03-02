@@ -57,23 +57,18 @@ public class BitcoinUtils {
         long remainingAmount = 0;
 
         for (final TransactionOutput transactionOutput : outputsToUse) {
-            
             TransactionInput ti = refundTransaction.addInput(transactionOutput);
             ti.setScriptSig(redeemScript);
-            System.err.println("adding tx input1: "+ti);
             remainingAmount += transactionOutput.getValue().longValue();
         }
         if(preBuiltInputs != null) {
             for(TransactionInput input:preBuiltInputs) {
                 TransactionInput ti = refundTransaction.addInput(input);
-                System.err.println("adding tx input2: "+ti);
-                remainingAmount += input.getValue().longValue();
+                remainingAmount += ti.getValue().longValue();
             }
         }
         
         sortTransactionInputs(refundTransaction);
-        
-        System.err.println("adding tx inputs done: "+refundTransaction);
         
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
