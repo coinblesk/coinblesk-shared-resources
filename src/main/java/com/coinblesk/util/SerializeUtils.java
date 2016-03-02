@@ -6,7 +6,6 @@
 package com.coinblesk.util;
 
 import com.coinblesk.json.BaseTO;
-import com.coinblesk.json.RefundP2shTO;
 import com.coinblesk.json.TxSig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -17,8 +16,10 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.Script;
 
 /**
  *
@@ -26,18 +27,19 @@ import org.bitcoinj.crypto.TransactionSignature;
  */
 public class SerializeUtils {
     
-    private static final Gson GSON;
+    public static final Gson GSON;
 
     static {
-        GSON = new GsonBuilder().create();
+        GSON = new GsonBuilder().setDateFormat("EEE, dd MMM yyyy HH:mm:ss:SSS zzz").create();
     }
     
-    public static <K extends BaseTO> void addSig(K k, ECKey ecKey) {
+    public static <K extends BaseTO> K sign(K k, ECKey ecKey) {
         k.messageSig(null);
         String json = GSON.toJson(k);
         Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
         ECKey.ECDSASignature sig = ecKey.sign(hash);
         k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
+        return k;
     }
     
     public static <K extends BaseTO> boolean verifySig(K k, ECKey ecKey) {
@@ -47,6 +49,21 @@ public class SerializeUtils {
         String json = GSON.toJson(k);
         Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
         return ecKey.verify(hash, sig);
+    }
+    public static boolean verifyTxSignatures(Transaction tx, List<TransactionSignature> sigs, Script redeemScript, ECKey serverPubKey) {
+        
+        final int len = tx.getInputs().size();
+        if(sigs.size() != len) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
+            TransactionSignature sig = sigs.get(i);
+            if(!serverPubKey.verify(sighash, sig)) {
+                return false;
+            }
+        }
+        return true;
     }
     
     public static List<TxSig> serializeSignatures(final List<TransactionSignature> signatures) {

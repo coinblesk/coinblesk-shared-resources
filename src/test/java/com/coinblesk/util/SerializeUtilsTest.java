@@ -20,12 +20,6 @@ import org.junit.Test;
  */
 public class SerializeUtilsTest {
     
-    private static final Gson GSON;
-
-    static {
-        GSON = new GsonBuilder().create();
-    }
-
     @Test
     public void testSignatureOk() {
         ECKey client = new ECKey();
@@ -35,7 +29,7 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
+        SerializeUtils.sign(p, client);
         Assert.assertTrue(SerializeUtils.verifySig(p, client));
     }
     
@@ -48,8 +42,8 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
-        PrepareHalfSignTO p2 = GSON.fromJson(GSON.toJson(p), PrepareHalfSignTO.class);
+        SerializeUtils.sign(p, client);
+        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p), PrepareHalfSignTO.class);
         Assert.assertTrue(SerializeUtils.verifySig(p2, client));
     }
     
@@ -62,10 +56,10 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
-        String stream = GSON.toJson(p);
+        SerializeUtils.sign(p, client);
+        String stream = SerializeUtils.GSON.toJson(p);
         stream = stream.replace("3", "4");
-        PrepareHalfSignTO p2 = GSON.fromJson(stream, PrepareHalfSignTO.class);
+        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
     
@@ -78,10 +72,10 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
-        String stream = GSON.toJson(p);
+        SerializeUtils.sign(p, client);
+        String stream = SerializeUtils.GSON.toJson(p);
         //Attention the resolution is on a second basis!
-        PrepareHalfSignTO p2 = GSON.fromJson(stream, PrepareHalfSignTO.class);
+        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
         p2.currentDate(new Date(1));
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
@@ -95,7 +89,7 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
+        SerializeUtils.sign(p, client);
         Assert.assertFalse(SerializeUtils.verifySig(p, server));
     }
     
@@ -109,8 +103,9 @@ public class SerializeUtilsTest {
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 
                 .currentDate(new Date());
-        SerializeUtils.addSig(p, client);
+        SerializeUtils.sign(p, client);
         p.amountToSpend(4);
+        System.err.println(SerializeUtils.GSON.toJson(p));
         Assert.assertFalse(SerializeUtils.verifySig(p, server));
     }
 }

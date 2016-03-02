@@ -37,7 +37,7 @@ public enum Type {
         BURNED_OUTPUTS(-16),
         SIGNATURE_ERROR(-17),
         REPLAY_ATTACK(-18),
-        OLD_TIME(-19),
+        TIME_MISMATCH(-19),
         INPUT_MISMATCH(-20);
 
         
