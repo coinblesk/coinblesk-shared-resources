@@ -14,12 +14,22 @@ import java.util.List;
  */
 public class RefundP2shTO extends BaseTO<RefundP2shTO> {
 
-    private List<Pair<byte[],Long>> refundClientOutpointsCoinPair;
-    private byte[] clientPublicKey;
+    private List<Pair<byte[],Long>> refundClientOutpointsCoinPair; //input
+    private byte[] bloomFilter; //input optional
+    private List<TxSig> refundSignaturesClient; //input
+    //
+    private List<TxSig> refundSignaturesServer; //output
+    private byte[] fullRefundTransaction; //output
     
-    private List<TxSig> refundSignaturesClient;
-    private List<TxSig> refundSignaturesServer;
-    private byte[] fullRefundTransaction;
+    @Override
+    public boolean isInputSet() {
+        return super.isInputSet() && refundClientOutpointsCoinPair != null && refundSignaturesClient != null;
+    }
+    
+    @Override
+    public boolean isOutputSet() {
+        return super.isOutputSet() && refundSignaturesServer != null && fullRefundTransaction != null;
+    }
     
     public RefundP2shTO refundClientOutpointsCoinPair(List<Pair<byte[],Long>> refundClientOutpointsCoinPair) {
         this.refundClientOutpointsCoinPair = refundClientOutpointsCoinPair;
@@ -28,6 +38,15 @@ public class RefundP2shTO extends BaseTO<RefundP2shTO> {
     
     public List<Pair<byte[],Long>> refundClientOutpointsCoinPair() {
         return refundClientOutpointsCoinPair;
+    }
+    
+    public RefundP2shTO bloomFilter(byte[] bloomFilter) {
+        this.bloomFilter = bloomFilter;
+        return this;
+    }
+
+    public byte[] bloomFilter() {
+        return bloomFilter;
     }
     
     public RefundP2shTO refundSignaturesClient(List<TxSig> refundSignaturesClient) {
@@ -46,15 +65,6 @@ public class RefundP2shTO extends BaseTO<RefundP2shTO> {
     
     public List<TxSig> refundSignaturesServer() {
         return refundSignaturesServer;
-    }
-    
-    public RefundP2shTO clientPublicKey(byte[] clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
-        return this;
-    }
-    
-    public byte[] clientPublicKey() {
-        return clientPublicKey;
     }
     
     public RefundP2shTO fullRefundTransaction(byte[] fullRefundTransaction) {

@@ -13,19 +13,9 @@ import java.util.List;
  */
 public class RefundTO extends BaseTO<RefundTO> {
 
-    private byte[] clientPublicKey;
     private byte[] refundTransaction;
     private List<TxSig> clientSignatures;
     private List<TxSig> serverSignatures;
-    
-    public RefundTO clientPublicKey(byte[] clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
-        return this;
-    }
-    
-    public byte[] clientPublicKey() {
-        return clientPublicKey;
-    }
     
     public RefundTO refundTransaction(byte[] refundTransaction) {
         this.refundTransaction = refundTransaction;

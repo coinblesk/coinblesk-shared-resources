@@ -13,6 +13,7 @@ import java.util.Map;
  * @author Thomas Bocek
  */
 public enum Type {
+        SUCCESS_FILTERED(5),
         NO_INSTANT_PAYMENT(4),
         EMAIL_ALREADY_EXISTS_NOT_ACTIVATED(3),
         EMAIL_ALREADY_EXISTS_ACTIVATED(2),

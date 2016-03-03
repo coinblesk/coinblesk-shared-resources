@@ -14,7 +14,6 @@ import org.bitcoinj.core.Address;
 public class CompleteSignTO extends BaseTO<CompleteSignTO> {
 
     private byte[] fullSignedTransaction;
-    private byte[] clientPublicKey;
     private String p2shAddressTo;
 
     public CompleteSignTO fullSignedTransaction(byte[] fullSignedTransaction) {
@@ -24,15 +23,6 @@ public class CompleteSignTO extends BaseTO<CompleteSignTO> {
 
     public byte[] fullSignedTransaction() {
         return fullSignedTransaction;
-    }
-
-    public CompleteSignTO clientPublicKey(byte[] clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
-        return this;
-    }
-
-    public byte[] clientPublicKey() {
-        return clientPublicKey;
     }
     
     public CompleteSignTO p2shAddressTo(String p2shAddressTo) {

@@ -13,29 +13,25 @@ import java.util.List;
  */
 public class PrepareHalfSignTO extends BaseTO<PrepareHalfSignTO> {
 
-    private byte[] clientPublicKey; //input
     private long amountToSpend; //input
     private String p2shAddressTo; //input
+    private byte[] bloomFilter; //input optional
     //
     private byte[] unsignedTransaction; //output
     private List<TxSig> signatures; //output
 
-    public PrepareHalfSignTO clientPublicKey(byte[] clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
-        return this;
-    }
     
+    @Override
     public boolean isInputSet() {
-        return super.isInputSet() && clientPublicKey != null && amountToSpend !=0 && p2shAddressTo != null;
+        return super.isInputSet() && amountToSpend !=0 && p2shAddressTo != null;
     }
     
+    @Override
     public boolean isOutputSet() {
         return super.isOutputSet() && unsignedTransaction != null && signatures != null;
     }
-
-    public byte[] clientPublicKey() {
-        return clientPublicKey;
-    }
+    
+    
 
     public PrepareHalfSignTO amountToSpend(long amountToSpend) {
         this.amountToSpend = amountToSpend;
@@ -53,6 +49,15 @@ public class PrepareHalfSignTO extends BaseTO<PrepareHalfSignTO> {
 
     public String p2shAddressTo() {
         return p2shAddressTo;
+    }
+    
+    public PrepareHalfSignTO bloomFilter(byte[] bloomFilter) {
+        this.bloomFilter = bloomFilter;
+        return this;
+    }
+
+    public byte[] bloomFilter() {
+        return bloomFilter;
     }
 
     public PrepareHalfSignTO unsignedTransaction(byte[] unsignedTransaction) {
