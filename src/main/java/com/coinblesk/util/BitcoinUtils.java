@@ -238,6 +238,7 @@ public class BitcoinUtils {
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
         }
+        sortTransactionOutputs(tx);
 
         if (tx.getOutputs().isEmpty()) {
             return null;
@@ -298,6 +299,16 @@ public class BitcoinUtils {
          tx.clearInputs();
          for(TransactionInput transactionInput:sorted) {
              tx.addInput(transactionInput);
+         }
+         
+    }
+    
+    private static void sortTransactionOutputs(Transaction tx) {
+         //now make it deterministic
+         List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
+         tx.clearOutputs();
+         for(TransactionOutput transactionOutput:sorted) {
+             tx.addOutput(transactionOutput);
          }
          
     }

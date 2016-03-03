@@ -51,7 +51,6 @@ public class SerializeUtils {
         return ecKey.verify(hash, sig);
     }
     public static boolean verifyTxSignatures(Transaction tx, List<TransactionSignature> sigs, Script redeemScript, ECKey serverPubKey) {
-        
         final int len = tx.getInputs().size();
         if(sigs.size() != len) {
             return false;
