@@ -32,7 +32,7 @@ public class BitcoinUtils {
 
     final static public int BLOCKS_PER_DAY = 24 * 6;
 
-    public static int lockTimeBlock(int nowInDays, int currentHeight) {
+    public static int lockTimeBlockInDays(int nowInDays, int currentHeight) {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
     
@@ -56,11 +56,13 @@ public class BitcoinUtils {
         for (final TransactionOutput transactionOutput : outputsToUse) {
             TransactionInput ti = refundTransaction.addInput(transactionOutput);
             ti.setScriptSig(redeemScript);
+            ti.setSequenceNumber(0); //we want to timelock
             remainingAmount += transactionOutput.getValue().longValue();
         }
         if(preBuiltInputs != null) {
             for(TransactionInput input:preBuiltInputs) {
                 TransactionInput ti = refundTransaction.addInput(input);
+                ti.setSequenceNumber(0); //we want to timelock
                 remainingAmount += ti.getValue().longValue();
             }
         }
@@ -123,7 +125,8 @@ public class BitcoinUtils {
         //will be less than list.size
         final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs().size());
         for (final TransactionOutput transactionOutput : tx.getOutputs()) {
-            if (transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+            if (transactionOutput.getAddressFromP2SH(params) != null && 
+                    transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
                 transactionOutPoints.add(new Pair<>(
                         transactionOutput.getOutPointFor(), transactionOutput.getValue()));
             }
@@ -246,7 +249,8 @@ public class BitcoinUtils {
     public static List<TransactionOutput> myOutputs(NetworkParameters params, List<TransactionOutput> allOutputs, Address p2shAddress) {
         final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size()/2);
         for(TransactionOutput transactionOutput:allOutputs) {
-            if(transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+            if(transactionOutput.getAddressFromP2SH(params) != null &&
+                    transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
                 myOutputs.add(transactionOutput);
             }
         }
