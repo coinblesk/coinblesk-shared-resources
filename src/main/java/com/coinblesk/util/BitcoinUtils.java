@@ -90,9 +90,13 @@ public class BitcoinUtils {
         }
         return signatures;
     }
+    
+    public static boolean clientFirst(List<ECKey> keys, ECKey multisigClientKey) {
+        return keys.indexOf(multisigClientKey)==0;
+    }
 
     public static boolean applySignatures(Transaction tx, Script redeemScript,
-            List<TransactionSignature> signatures1, List<TransactionSignature> signatures2) {
+            List<TransactionSignature> signatures1, List<TransactionSignature> signatures2, boolean clientFirst) {
         final int len = tx.getInputs().size();
         if (len != signatures1.size()) {
             return false;
@@ -104,8 +108,13 @@ public class BitcoinUtils {
             List<TransactionSignature> tmp = new ArrayList<>(2);
             final TransactionSignature signature1 = signatures1.get(i);
             final TransactionSignature signature2 = signatures2.get(i);
-            tmp.add(signature1);
-            tmp.add(signature2);
+            if(clientFirst) {
+                tmp.add(signature1);
+                tmp.add(signature2);
+            } else {
+                tmp.add(signature2);
+                tmp.add(signature1);
+            }
             final Script refundTransactionInputScript = ScriptBuilder.createP2SHMultiSigInputScript(tmp, redeemScript);
             tx.getInput(i).setScriptSig(refundTransactionInputScript);
         }
