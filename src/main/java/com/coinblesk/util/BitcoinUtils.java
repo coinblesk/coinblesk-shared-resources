@@ -247,7 +247,7 @@ public class BitcoinUtils {
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
         }
-        sortTransactionOutputs(tx);
+        //sortTransactionOutputs(tx);
 
         if (tx.getOutputs().isEmpty()) {
             return null;
