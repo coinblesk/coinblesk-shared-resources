@@ -15,7 +15,7 @@ public class PrepareHalfSignTO extends BaseTO<PrepareHalfSignTO> {
 
     private long amountToSpend; //input
     private String p2shAddressTo; //input
-    private byte[] bloomFilter; //input optional
+    private byte[] bloomFilter; //input //output optional
     //
     private byte[] unsignedTransaction; //output
     private List<TxSig> signatures; //output

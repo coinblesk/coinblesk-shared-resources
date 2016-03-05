@@ -8,9 +8,11 @@ package com.coinblesk.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
@@ -53,7 +55,11 @@ public class BitcoinUtils {
         final Transaction refundTransaction = new Transaction(params);
         long remainingAmount = 0;
 
+        final Set<TransactionOutPoint> unique = new HashSet<>();
         for (final TransactionOutput transactionOutput : outputsToUse) {
+            if(!unique.add(transactionOutput.getOutPointFor())) {
+                continue;
+            }
             TransactionInput ti = refundTransaction.addInput(transactionOutput);
             ti.setScriptSig(redeemScript);
             ti.setSequenceNumber(0); //we want to timelock
@@ -61,6 +67,9 @@ public class BitcoinUtils {
         }
         if(preBuiltInputs != null) {
             for(TransactionInput input:preBuiltInputs) {
+                if(!unique.add(input.getOutpoint())) {
+                    continue;
+                }
                 TransactionInput ti = refundTransaction.addInput(input);
                 ti.setSequenceNumber(0); //we want to timelock
                 remainingAmount += ti.getValue().longValue();
