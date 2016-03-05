@@ -39,7 +39,9 @@ public enum Type {
         SIGNATURE_ERROR(-17),
         REPLAY_ATTACK(-18),
         TIME_MISMATCH(-19),
-        INPUT_MISMATCH(-20);
+        INPUT_MISMATCH(-20),
+        INVALID_LOCKTIME(-21),
+        INVALID_TX(-22);
 
         
         private final int type;

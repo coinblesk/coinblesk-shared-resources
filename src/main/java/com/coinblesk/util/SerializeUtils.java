@@ -78,16 +78,18 @@ public class SerializeUtils {
         return true;
     }
 
-    public static boolean verifRefund(Transaction refund, Transaction... inputTxs) {
-        return verifRefund(refund, Arrays.asList(inputTxs));
+    public static boolean verifyRefund(Transaction refund, Transaction... inputTxs) {
+        return verifyRefund(refund, Arrays.asList(inputTxs));
     }
 
-    public static boolean verifRefund(Transaction refund, List<Transaction> inputTxs) {
+    public static boolean verifyRefund(Transaction refund, List<Transaction> inputTxs) {
         Map<Sha256Hash, Transaction> tmp = new HashMap<>();
         for (Transaction t : inputTxs) {
             tmp.put(t.getHash(), t);
         }
-
+        return verifyRefund(refund, tmp);
+    }
+    public static boolean verifyRefund(Transaction refund, Map<Sha256Hash, Transaction> tmp) {
         try {
             for (TransactionInput refundInput : refund.getInputs()) {
                 Transaction previous = tmp.get(refundInput.getOutpoint().getHash());
