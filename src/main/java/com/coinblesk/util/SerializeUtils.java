@@ -48,6 +48,7 @@ public class SerializeUtils {
         k.messageSig(null);
         String json = GSON.toJson(k);
         Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        LOG.debug("json sign serialized to: [{}]=hash:{}", json, hash);
         ECKey.ECDSASignature sig = ecKey.sign(hash);
         k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
         return k;
@@ -59,7 +60,9 @@ public class SerializeUtils {
                 check.sigS()));
         k.messageSig(null);
         String json = GSON.toJson(k);
+        
         Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        LOG.debug("json verify serialized to: [{}]=hash:{}", json, hash);
         return ecKey.verify(hash, sig);
     }
 
