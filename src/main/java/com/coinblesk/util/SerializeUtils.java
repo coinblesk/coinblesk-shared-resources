@@ -39,9 +39,8 @@ public class SerializeUtils {
 
     public static final Gson GSON;
 
-    //TODO: use long
     static {
-        GSON = new GsonBuilder().setDateFormat("EEE, dd MMM yyyy HH:mm:ss:SSS zzz").create();
+        GSON = new GsonBuilder().create();
     }
 
     public static <K extends BaseTO> K sign(K k, ECKey ecKey) {
