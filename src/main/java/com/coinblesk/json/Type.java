@@ -41,7 +41,8 @@ public enum Type {
         TIME_MISMATCH(-19),
         INPUT_MISMATCH(-20),
         INVALID_LOCKTIME(-21),
-        INVALID_TX(-22);
+        INVALID_TX(-22),
+        JSON_SIGNATURE_ERROR(-23);
 
         
         private final int type;
