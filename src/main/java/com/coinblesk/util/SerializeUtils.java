@@ -7,14 +7,24 @@ package com.coinblesk.util;
 
 import com.coinblesk.json.BaseTO;
 import com.coinblesk.json.TxSig;
+import com.coinblesk.json.Type;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.codec.binary.Base64;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -40,17 +50,54 @@ public class SerializeUtils {
     public static final Gson GSON;
 
     static {
-        GSON = new GsonBuilder().create();
+        GSON = new GsonBuilder().setPrettyPrinting().registerTypeHierarchyAdapter(byte[].class,
+            new ByteArrayToBase64TypeAdapter()).create();
+    }
+    
+    private final static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
+        Base64 b = new Base64(Integer.MAX_VALUE);
+
+        @Override
+        public JsonElement serialize(byte[] src, java.lang.reflect.Type typeOfSrc,
+                JsonSerializationContext context) {
+            return new JsonPrimitive(b.encodeToString(src));
+        }
+
+        @Override
+        public byte[] deserialize(JsonElement json, java.lang.reflect.Type typeOfT,
+                JsonDeserializationContext context) throws JsonParseException {
+            return b.decode(json.getAsString());
+        }
+        
+        
     }
 
-    public static <K extends BaseTO> K sign(K k, ECKey ecKey) {
+    public static <K extends BaseTO> K sign(K k, ECKey ecKey)  {
         k.messageSig(null);
         String json = GSON.toJson(k);
-        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        Sha256Hash hash = canonicalizeJSONHash(json);
         LOG.debug("json sign serialized to: [{}]=hash:{}", json, hash);
         ECKey.ECDSASignature sig = ecKey.sign(hash);
         k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
         return k;
+    }
+    
+    public static Sha256Hash canonicalizeJSONHash(String json) {
+        String lines[] = json.split("\\n");
+        List<String> tmpLines = new ArrayList<>(lines.length);
+        for(String line: lines) {
+            line = line.trim();
+            if(line.endsWith(",")) {
+                line = line.substring(0, line.length() - 1);
+            }
+            tmpLines.add(line);
+        }
+        Collections.sort(tmpLines);
+        StringBuilder sb = new StringBuilder();
+        for(String line: tmpLines) {
+            sb.append(line);
+        }
+        return Sha256Hash.wrap(Sha256Hash.hash(sb.toString().getBytes()));
     }
 
     public static <K extends BaseTO> boolean verifySig(K k, ECKey ecKey) {
@@ -60,7 +107,7 @@ public class SerializeUtils {
         k.messageSig(null);
         String json = GSON.toJson(k);
         
-        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(json.getBytes()));
+        Sha256Hash hash = canonicalizeJSONHash(json);
         LOG.debug("json verify serialized to: [{}]=hash:{}", json, hash);
         return ecKey.verify(hash, sig);
     }

@@ -6,9 +6,6 @@
 package com.coinblesk.util;
 
 import com.coinblesk.json.PrepareHalfSignTO;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.util.Date;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.params.UnitTestParams;
 import org.junit.Assert;
@@ -19,7 +16,34 @@ import org.junit.Test;
  * @author draft
  */
 public class SerializeUtilsTest {
-    
+
+    @Test
+    public void testOrder() {
+        String json1 = "{\n"
+                + "  \"amountToSpend\": 3,\n"
+                + "  \"p2shAddressTo\": \"msaR6WeixDg5CFTKy6pVKe6HbG8bFxDajZ\",\n"
+                + "  \"type\": 0,\n"
+                + "  \"messageSig\": {\n"
+                + "    \"sigS\": \"31508828331232788577082964979495496547942777680132432034841436736860451836856\",\n"
+                + "    \"sigR\": \"74907189571302380198686832665811666467813733025891418980987412059235732894027\"\n"
+                + "  },\n"
+                + "  \"currentDate\": 1457300122942,\n"
+                + "  \"clientPublicKey\": \"Aw5QSWxGgUq7tdklwDY3a+DuqSQVWv0QUuCMo+ILwgeP\\r\\n\"\n"
+                + "}";
+        String json2 = "{\n"
+                + "  \"p2shAddressTo\": \"msaR6WeixDg5CFTKy6pVKe6HbG8bFxDajZ\",\n"
+                + "  \"type\": 0,\n"
+                + "  \"messageSig\": {\n"
+                + "    \"sigR\": \"74907189571302380198686832665811666467813733025891418980987412059235732894027\",\n"
+                + "    \"sigS\": \"31508828331232788577082964979495496547942777680132432034841436736860451836856\"\n"
+                + "  },\n"
+                + "  \"currentDate\": 1457300122942,\n"
+                + "  \"clientPublicKey\": \"Aw5QSWxGgUq7tdklwDY3a+DuqSQVWv0QUuCMo+ILwgeP\\r\\n\"\n"
+                + "  \"amountToSpend\": 3\n"
+                + "}";
+        Assert.assertEquals(SerializeUtils.canonicalizeJSONHash(json1), SerializeUtils.canonicalizeJSONHash(json2));
+    }
+
     @Test
     public void testSignatureOk() {
         ECKey client = new ECKey();
@@ -32,7 +56,7 @@ public class SerializeUtilsTest {
         SerializeUtils.sign(p, client);
         Assert.assertTrue(SerializeUtils.verifySig(p, client));
     }
-    
+
     @Test
     public void testSignatureOkSerialize() {
         ECKey client = new ECKey();
@@ -43,10 +67,11 @@ public class SerializeUtilsTest {
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
-        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p), PrepareHalfSignTO.class);
+        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p),
+                PrepareHalfSignTO.class);
         Assert.assertTrue(SerializeUtils.verifySig(p2, client));
     }
-    
+
     @Test
     public void testSignatureNokSerialize() {
         ECKey client = new ECKey();
@@ -62,7 +87,7 @@ public class SerializeUtilsTest {
         PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
-    
+
     @Test
     public void testSignatureNokSerialize2() throws InterruptedException {
         ECKey client = new ECKey();
@@ -79,7 +104,7 @@ public class SerializeUtilsTest {
         p2.currentDate(1);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
-    
+
     @Test
     public void testSignatureRebuild() {
         ECKey client = new ECKey();
@@ -92,7 +117,7 @@ public class SerializeUtilsTest {
         SerializeUtils.sign(p, client);
         Assert.assertFalse(SerializeUtils.verifySig(p, server));
     }
-    
+
     @Test
     public void testSignatureChangedMessage() {
         ECKey client = new ECKey();
@@ -101,7 +126,6 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         p.amountToSpend(4);
