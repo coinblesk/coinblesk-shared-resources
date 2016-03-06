@@ -28,7 +28,7 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         Assert.assertTrue(SerializeUtils.verifySig(p, client));
     }
@@ -41,7 +41,7 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p), PrepareHalfSignTO.class);
         Assert.assertTrue(SerializeUtils.verifySig(p2, client));
@@ -55,7 +55,7 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         stream = stream.replace("3", "4");
@@ -71,12 +71,12 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         //Attention the resolution is on a second basis!
         PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
-        p2.currentDate(new Date(1));
+        p2.currentDate(1);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
     
@@ -88,7 +88,7 @@ public class SerializeUtilsTest {
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         Assert.assertFalse(SerializeUtils.verifySig(p, server));
     }
@@ -102,7 +102,7 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 
-                .currentDate(new Date());
+                .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
         p.amountToSpend(4);
         System.err.println(SerializeUtils.GSON.toJson(p));

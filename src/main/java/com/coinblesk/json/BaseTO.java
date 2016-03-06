@@ -15,11 +15,11 @@ public class BaseTO<T extends BaseTO> {
     private int type = 0; //input/output - always valid
     private String message; //output
     private TxSig messageSig; //input/output
-    private Date currentDate; //input for now
+    private long currentDate; //input for now
     private byte[] clientPublicKey; //input
     
     public boolean isInputSet() {
-        return messageSig != null && currentDate != null;
+        return messageSig != null && currentDate > 0;
     }
 
     public boolean isOutputSet() {
@@ -62,12 +62,12 @@ public class BaseTO<T extends BaseTO> {
         return messageSig;
     }
     
-    public T currentDate(final Date currentDate) {
+    public T currentDate(final long currentDate) {
         this.currentDate = currentDate;
         return (T)this;
     }
     
-    public Date currentDate() {
+    public long currentDate() {
         return currentDate;
     }
     
