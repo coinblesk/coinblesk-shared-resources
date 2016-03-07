@@ -281,7 +281,16 @@ public class BitcoinUtils {
           Collections.sort(copy, new Comparator<TransactionInput>() {
             @Override
             public int compare(final TransactionInput o1, final TransactionInput o2) {
-                int c = o1.getOutpoint().getHash().compareTo(o2.getOutpoint().getHash());
+                final byte[] left = o1.getOutpoint().getHash().getBytes();
+                final byte[] right = o2.getOutpoint().getHash().getBytes();
+                for (int i = 0, j = 0; i < left.length && j < right.length; i++, j++) {
+                    final int a = (left[i] & 0xff);
+                    final int b = (right[j] & 0xff);
+                    if (a != b) {
+                        return a - b;
+                    }
+                }
+                int c = left.length - right.length;
                 if(c!=0) {
                     return c;
                 }
@@ -305,7 +314,7 @@ public class BitcoinUtils {
                         return a - b;
                     }
                 }
-                return left.length - right.length;       
+                return left.length - right.length;
             }
         });
         return copy;

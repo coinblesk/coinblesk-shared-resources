@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.codec.binary.Base64;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -55,18 +54,17 @@ public class SerializeUtils {
     }
     
     private final static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
-        Base64 b = new Base64(Integer.MAX_VALUE);
-
+       
         @Override
         public JsonElement serialize(byte[] src, java.lang.reflect.Type typeOfSrc,
                 JsonSerializationContext context) {
-            return new JsonPrimitive(b.encodeToString(src));
+            return new JsonPrimitive(Base64.encodeToString(src, Base64.NO_WRAP));
         }
 
         @Override
         public byte[] deserialize(JsonElement json, java.lang.reflect.Type typeOfT,
                 JsonDeserializationContext context) throws JsonParseException {
-            return b.decode(json.getAsString());
+            return Base64.decode(json.getAsString(), Base64.NO_WRAP);
         }
         
         

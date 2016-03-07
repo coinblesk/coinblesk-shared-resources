@@ -5,10 +5,15 @@
  */
 package com.coinblesk.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import javax.xml.bind.DatatypeConverter;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
@@ -69,7 +74,6 @@ public class BitcoinUtilsTest {
         List<TransactionInput> txs4 = Arrays.asList(ti3, ti1, ti2);
         List<TransactionInput> txs5 = Arrays.asList(ti1, ti3, ti2);
         List<TransactionInput> txs6 = Arrays.asList(ti2, ti3, ti1);
-        
         List<TransactionInput> reference = BitcoinUtils.sortInputs(txs1);
         Assert.assertEquals(reference, BitcoinUtils.sortInputs(txs1));
         Assert.assertEquals(reference, BitcoinUtils.sortInputs(txs2));
@@ -78,6 +82,8 @@ public class BitcoinUtilsTest {
         Assert.assertEquals(reference, BitcoinUtils.sortInputs(txs5));
         Assert.assertEquals(reference, BitcoinUtils.sortInputs(txs6));
         Assert.assertNotEquals(txs1, txs2);
+        
+ 
         
     }
 }
