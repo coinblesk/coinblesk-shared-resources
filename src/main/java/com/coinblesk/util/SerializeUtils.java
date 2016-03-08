@@ -118,6 +118,7 @@ public class SerializeUtils {
         }
         for (int i = 0; i < len; i++) {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
+            LOG.debug("verify for input {}({}), redeemscript={}, sig is {}", i, tx.getInput(i), redeemScript, sighash, sigs.get(i));
             TransactionSignature sig = sigs.get(i);
             if (!serverPubKey.verify(sighash, sig)) {
                 return false;

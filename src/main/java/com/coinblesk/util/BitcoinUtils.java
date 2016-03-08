@@ -25,12 +25,16 @@ import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author draft
  */
 public class BitcoinUtils {
+    
+    private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
 
     final static public int BLOCKS_PER_DAY = 24 * 6;
 
@@ -95,6 +99,7 @@ public class BitcoinUtils {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(
                     signKey.sign(sighash), Transaction.SigHash.ALL, false);
+            LOG.debug("partially sign for input {}({}), redeemscript={}, sig is {}", i, tx.getInput(i), redeemScript, sighash, serverSignature);
             signatures.add(serverSignature);
         }
         return signatures;
