@@ -5,6 +5,7 @@
  */
 package com.coinblesk.util;
 
+import com.google.common.primitives.UnsignedBytes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -348,9 +349,33 @@ public class BitcoinUtils {
          
     }
     
+    enum PureJavaComparator implements Comparator<byte[]> {
+      INSTANCE;
+
+      @Override public int compare(byte[] left, byte[] right) {
+        int minLength = Math.min(left.length, right.length);
+        for (int i = 0; i < minLength; i++) {
+          int result = UnsignedBytes.compare(left[i], right[i]);
+          if (result != 0) {
+            return result;
+          }
+        }
+        return left.length - right.length;
+      }
+    }
+    
+    public static final Comparator<ECKey> PUBKEY_COMPARATOR = new Comparator<ECKey>() {
+        private Comparator<byte[]> comparator = PureJavaComparator.INSTANCE;
+
+        @Override
+        public int compare(ECKey k1, ECKey k2) {
+            return comparator.compare(k1.getPubKey(), k2.getPubKey());
+        }
+    };
+    
     public static Script createRedeemScript(int threshold, List<ECKey> pubkeys) {
         pubkeys = new ArrayList<>(pubkeys);
-        Collections.sort(pubkeys, ECKey.PUBKEY_COMPARATOR);
+        Collections.sort(pubkeys, PUBKEY_COMPARATOR);
         return ScriptBuilder.createMultiSigOutputScript(threshold, pubkeys);
     }
     
