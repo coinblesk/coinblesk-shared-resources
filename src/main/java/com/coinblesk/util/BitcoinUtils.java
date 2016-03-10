@@ -27,8 +27,6 @@ import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
-import static org.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
-import static org.bitcoinj.script.ScriptBuilder.createRedeemScript;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * @author draft
  */
 public class BitcoinUtils {
-    
+
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
 
     final static public int BLOCKS_PER_DAY = 24 * 6;
@@ -45,11 +43,11 @@ public class BitcoinUtils {
     public static int lockTimeBlockInDays(int nowInDays, int currentHeight) {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
-    
+
     public static List<TransactionInput> convertPointsToInputs(final NetworkParameters params,
             final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript) {
         final List<TransactionInput> retVal = new ArrayList<>();
-        for (final Pair<TransactionOutPoint, Coin> p:outputsToUse) {
+        for (final Pair<TransactionOutPoint, Coin> p : outputsToUse) {
             final TransactionInput ti = new TransactionInput(params, null,
                     redeemScript.getProgram(), p.element0(), p.element1());
             retVal.add(ti);
@@ -65,7 +63,7 @@ public class BitcoinUtils {
 
         final Set<TransactionOutPoint> unique = new HashSet<>();
         for (final TransactionOutput transactionOutput : outputsToUse) {
-            if(!unique.add(transactionOutput.getOutPointFor())) {
+            if (!unique.add(transactionOutput.getOutPointFor())) {
                 continue;
             }
             TransactionInput ti = refundTransaction.addInput(transactionOutput);
@@ -73,9 +71,9 @@ public class BitcoinUtils {
             ti.setSequenceNumber(0); //we want to timelock
             remainingAmount += transactionOutput.getValue().longValue();
         }
-        if(preBuiltInputs != null) {
-            for(TransactionInput input:preBuiltInputs) {
-                if(!unique.add(input.getOutpoint())) {
+        if (preBuiltInputs != null) {
+            for (TransactionInput input : preBuiltInputs) {
+                if (!unique.add(input.getOutpoint())) {
                     continue;
                 }
                 TransactionInput ti = refundTransaction.addInput(input);
@@ -83,9 +81,9 @@ public class BitcoinUtils {
                 remainingAmount += ti.getValue().longValue();
             }
         }
-        
+
         sortTransactionInputs(refundTransaction);
-        
+
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
@@ -103,18 +101,20 @@ public class BitcoinUtils {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(
                     signKey.sign(sighash), Transaction.SigHash.ALL, false);
-            LOG.debug("partially sign for input {}({}), redeemscript={}, sig is {}", i, tx.getInput(i), redeemScript, sighash, serverSignature);
+            LOG.debug("partially sign for input {}({}), redeemscript={}, sig is {}", i, tx.getInput(i),
+                    redeemScript, sighash, serverSignature);
             signatures.add(serverSignature);
         }
         return signatures;
     }
-    
+
     public static boolean clientFirst(List<ECKey> keys, ECKey multisigClientKey) {
-        return keys.indexOf(multisigClientKey)==0;
+        return keys.indexOf(multisigClientKey) == 0;
     }
 
     public static boolean applySignatures(Transaction tx, Script redeemScript,
-            List<TransactionSignature> signatures1, List<TransactionSignature> signatures2, boolean clientFirst) {
+            List<TransactionSignature> signatures1, List<TransactionSignature> signatures2,
+            boolean clientFirst) {
         final int len = tx.getInputs().size();
         if (len != signatures1.size()) {
             return false;
@@ -126,21 +126,23 @@ public class BitcoinUtils {
             List<TransactionSignature> tmp = new ArrayList<>(2);
             final TransactionSignature signature1 = signatures1.get(i);
             final TransactionSignature signature2 = signatures2.get(i);
-            if(clientFirst) {
+            if (clientFirst) {
                 tmp.add(signature1);
                 tmp.add(signature2);
             } else {
                 tmp.add(signature2);
                 tmp.add(signature1);
             }
-            final Script refundTransactionInputScript = ScriptBuilder.createP2SHMultiSigInputScript(tmp, redeemScript);
+            final Script refundTransactionInputScript = ScriptBuilder.createP2SHMultiSigInputScript(tmp,
+                    redeemScript);
             tx.getInput(i).setScriptSig(refundTransactionInputScript);
         }
         return true;
     }
 
     public static List<Pair<TransactionOutPoint, Coin>> outpointsFromInput(final Transaction tx) {
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getInputs().size());
+        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getInputs()
+                .size());
         for (final TransactionInput transactionInput : tx.getInputs()) {
             transactionOutPoints.add(new Pair<>(
                     transactionInput.getOutpoint(), transactionInput.getValue()));
@@ -148,12 +150,14 @@ public class BitcoinUtils {
         return transactionOutPoints;
     }
 
-    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromOutputFor(NetworkParameters params, final Transaction tx, final Address p2shAddress) {
+    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromOutputFor(NetworkParameters params,
+            final Transaction tx, final Address p2shAddress) {
         //will be less than list.size
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs().size());
+        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs()
+                .size());
         for (final TransactionOutput transactionOutput : tx.getOutputs()) {
-            if (transactionOutput.getAddressFromP2SH(params) != null && 
-                    transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+            if (transactionOutput.getAddressFromP2SH(params) != null
+                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
                 transactionOutPoints.add(new Pair<>(
                         transactionOutput.getOutPointFor(), transactionOutput.getValue()));
             }
@@ -236,7 +240,7 @@ public class BitcoinUtils {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
-        
+
         List<TransactionInput> unsorted = new ArrayList<TransactionInput>(outputs.size());
         for (TransactionOutput output : outputs) {
             if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
@@ -247,7 +251,7 @@ public class BitcoinUtils {
         }
         //now make it deterministic
         sortTransactionInputs(tx);
-       
+
         totalAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         if (amountToSpend > totalAmount) {
             return null;
@@ -273,21 +277,22 @@ public class BitcoinUtils {
 
         return tx;
     }
-    
-    public static List<TransactionOutput> myOutputs(NetworkParameters params, List<TransactionOutput> allOutputs, Address p2shAddress) {
-        final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size()/2);
-        for(TransactionOutput transactionOutput:allOutputs) {
-            if(transactionOutput.getAddressFromP2SH(params) != null &&
-                    transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
+
+    public static List<TransactionOutput> myOutputs(NetworkParameters params,
+            List<TransactionOutput> allOutputs, Address p2shAddress) {
+        final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size() / 2);
+        for (TransactionOutput transactionOutput : allOutputs) {
+            if (transactionOutput.getAddressFromP2SH(params) != null
+                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
                 myOutputs.add(transactionOutput);
             }
         }
         return myOutputs;
     }
-    
+
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
-         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
-          Collections.sort(copy, new Comparator<TransactionInput>() {
+        final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
+        Collections.sort(copy, new Comparator<TransactionInput>() {
             @Override
             public int compare(final TransactionInput o1, final TransactionInput o2) {
                 final byte[] left = o1.getOutpoint().getHash().getBytes();
@@ -300,7 +305,7 @@ public class BitcoinUtils {
                     }
                 }
                 int c = left.length - right.length;
-                if(c!=0) {
+                if (c != 0) {
                     return c;
                 }
                 return Long.compare(o1.getOutpoint().getIndex(), o2.getOutpoint().getIndex());
@@ -308,7 +313,7 @@ public class BitcoinUtils {
         });
         return copy;
     }
-    
+
     public static List<TransactionOutput> sortOutputs(final List<TransactionOutput> unsorted) {
         final List<TransactionOutput> copy = new ArrayList<TransactionOutput>(unsorted);
         Collections.sort(copy, new Comparator<TransactionOutput>() {
@@ -327,63 +332,61 @@ public class BitcoinUtils {
             }
         });
         return copy;
-     }
+    }
 
     private static void sortTransactionInputs(Transaction tx) {
-         //now make it deterministic
-         List<TransactionInput> sorted = sortInputs(tx.getInputs());
-         tx.clearInputs();
-         for(TransactionInput transactionInput:sorted) {
-             tx.addInput(transactionInput);
-         }
-         
-    }
-    
-    private static void sortTransactionOutputs(Transaction tx) {
-         //now make it deterministic
-         List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
-         tx.clearOutputs();
-         for(TransactionOutput transactionOutput:sorted) {
-             tx.addOutput(transactionOutput);
-         }
-         
-    }
-    
-    enum PureJavaComparator implements Comparator<byte[]> {
-      INSTANCE;
-
-      @Override public int compare(byte[] left, byte[] right) {
-        int minLength = Math.min(left.length, right.length);
-        for (int i = 0; i < minLength; i++) {
-          int result = UnsignedBytes.compare(left[i], right[i]);
-          if (result != 0) {
-            return result;
-          }
+        //now make it deterministic
+        List<TransactionInput> sorted = sortInputs(tx.getInputs());
+        tx.clearInputs();
+        for (TransactionInput transactionInput : sorted) {
+            tx.addInput(transactionInput);
         }
-        return left.length - right.length;
-      }
-    }
-    
-    public static final Comparator<ECKey> PUBKEY_COMPARATOR = new Comparator<ECKey>() {
-        private Comparator<byte[]> comparator = PureJavaComparator.INSTANCE;
 
+    }
+
+    private static void sortTransactionOutputs(Transaction tx) {
+        //now make it deterministic
+        List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
+        tx.clearOutputs();
+        for (TransactionOutput transactionOutput : sorted) {
+            tx.addOutput(transactionOutput);
+        }
+
+    }
+
+    enum PureJavaComparator implements Comparator<byte[]> {
+        INSTANCE;
+
+        @Override public int compare(byte[] left, byte[] right) {
+            int minLength = Math.min(left.length, right.length);
+            for (int i = 0; i < minLength; i++) {
+                int result = UnsignedBytes.compare(left[i], right[i]);
+                if (result != 0) {
+                    return result;
+                }
+            }
+            return left.length - right.length;
+        }
+    }
+
+    public static final Comparator<ECKey> PUBKEY_COMPARATOR = new Comparator<ECKey>() {
         @Override
         public int compare(ECKey k1, ECKey k2) {
-            return comparator.compare(k1.getPubKey(), k2.getPubKey());
+            return PureJavaComparator.INSTANCE.compare(k1.getPubKey(), k2.getPubKey());
         }
     };
-    
+
     public static Script createRedeemScript(int threshold, List<ECKey> pubkeys) {
         pubkeys = new ArrayList<>(pubkeys);
         Collections.sort(pubkeys, PUBKEY_COMPARATOR);
         return ScriptBuilder.createMultiSigOutputScript(threshold, pubkeys);
     }
-    
+
     public static Script createP2SHOutputScript(int threshold, List<ECKey> pubkeys) {
         Script redeemScript = createRedeemScript(threshold, pubkeys);
         return createP2SHOutputScript(redeemScript);
     }
-    
+
     public static Script createP2SHOutputScript(Script redeemScript) {
         byte[] hash = Utils.sha256hash160(redeemScript.getProgram());
         return ScriptBuilder.createP2SHOutputScript(hash);
