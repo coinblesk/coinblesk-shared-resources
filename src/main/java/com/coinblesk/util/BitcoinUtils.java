@@ -353,6 +353,12 @@ public class BitcoinUtils {
         }
 
     }
+    
+    
+    //we are using our own comparator as the one provided by guava crashes android on some devices
+    //Nexus 5 with 6.0.1 crashes with SIGBUS in labart for the getLong operation. To use the pure
+    //java comparator, we took the one from guava and set it explicitely. This hack may be solved in
+    //future versions of guava
 
     enum PureJavaComparator implements Comparator<byte[]> {
         INSTANCE;
