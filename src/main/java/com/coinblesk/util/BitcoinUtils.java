@@ -84,7 +84,19 @@ public class BitcoinUtils {
 
         sortTransactionInputs(refundTransaction);
         
-        remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
+        //scriptsig ~350 per input
+        //one output ~25
+        int len = refundTransaction.unsafeBitcoinSerialize().length + 
+                25 + (350 * refundTransaction.getInputs().size());
+        
+        LOG.debug("expected refund tx length {}", len);
+        
+        int round = (len / 1000) + 1;
+        int fee = (int) (round * 50000);
+        
+        LOG.debug("adding refund tx fee in satoshis {}", fee);
+        
+        remainingAmount -= fee;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
         if (amountToSpend.isLessThan(transactionOutput.getMinNonDustValue())) {
@@ -251,8 +263,20 @@ public class BitcoinUtils {
         }
         //now make it deterministic
         sortTransactionInputs(tx);
+        
+        //scriptsig ~350 per input
+        //two output ~50
+        int len = tx.unsafeBitcoinSerialize().length + 
+                50 + (350 * tx.getInputs().size());
 
-        totalAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
+        LOG.debug("expected tx length {}", len);
+        
+        int round = (len / 1000) + 1;
+        int fee = (int) (round * 50000);
+        
+        LOG.debug("adding tx fee in satoshis {}", fee);
+        
+        totalAmount -= fee;
         if (amountToSpend > totalAmount) {
             return null;
         }
