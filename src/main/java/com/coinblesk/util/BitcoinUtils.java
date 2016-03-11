@@ -83,7 +83,7 @@ public class BitcoinUtils {
         }
 
         sortTransactionInputs(refundTransaction);
-
+        
         remainingAmount -= Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.value;
         final Coin amountToSpend = Coin.valueOf(remainingAmount);
         final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
