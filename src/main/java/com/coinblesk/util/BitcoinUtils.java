@@ -91,8 +91,11 @@ public class BitcoinUtils {
         
         LOG.debug("expected refund tx length {}", len);
         
-        int round = (len / 1000) + 1;
-        int fee = (int) (round * 50000);
+        //as in http://bitcoinexchangerate.org/test/fees
+        //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
+        //https://bitcoinfees.21.co/
+        //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
+        int fee = (int) (len * 10.562);
         
         LOG.debug("adding refund tx fee in satoshis {}", fee);
         
@@ -271,8 +274,11 @@ public class BitcoinUtils {
 
         LOG.debug("expected tx length {}", len);
         
-        int round = (len / 1000) + 1;
-        int fee = (int) (round * 50000);
+        //as in http://bitcoinexchangerate.org/test/fees
+        //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
+        //https://bitcoinfees.21.co/
+        //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
+        int fee = (int) (len * 10.562);
         
         LOG.debug("adding tx fee in satoshis {}", fee);
         
