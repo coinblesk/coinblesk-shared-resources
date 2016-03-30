@@ -427,4 +427,15 @@ public class BitcoinUtils {
         byte[] hash = Utils.sha256hash160(redeemScript.getProgram());
         return ScriptBuilder.createP2SHOutputScript(hash);
     }
+    
+    public static boolean isLocktimeByBlock(long locktime) {
+    	// see: https://bitcoin.org/en/developer-guide#locktime-and-sequence-number
+    	// https://en.bitcoin.it/wiki/Protocol_documentation#tx
+    	// Note: 0 disables locktime!
+    	return locktime > 0 && locktime < Transaction.LOCKTIME_THRESHOLD;
+    }
+    
+    public static boolean isLocktimeByTime(long locktime) {
+    	return locktime >= Transaction.LOCKTIME_THRESHOLD; 
+    }
 }

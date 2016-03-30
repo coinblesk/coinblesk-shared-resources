@@ -5,6 +5,9 @@
  */
 package com.coinblesk.util;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,5 +88,19 @@ public class BitcoinUtilsTest {
         
  
         
+    }
+    
+    
+    @Test
+    public void locktimeTest() {
+    	assertFalse(BitcoinUtils.isLocktimeByBlock(0));
+    	assertTrue(BitcoinUtils.isLocktimeByBlock(1));
+    	assertTrue(BitcoinUtils.isLocktimeByBlock(499999999));
+    	assertFalse(BitcoinUtils.isLocktimeByBlock(500000000));
+    	
+    	assertFalse(BitcoinUtils.isLocktimeByTime(0));
+    	assertFalse(BitcoinUtils.isLocktimeByTime(1));
+    	assertFalse(BitcoinUtils.isLocktimeByTime(499999999));
+    	assertTrue(BitcoinUtils.isLocktimeByTime(500000000));
     }
 }

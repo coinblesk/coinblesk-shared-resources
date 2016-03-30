@@ -17,10 +17,27 @@ repositories {
     mavenCentral()
 }
 
+// generate source jar (maven)
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+//task javadocJar(type: Jar, dependsOn: javadoc) {
+//    classifier = 'javadoc'
+//    from javadoc.destinationDir
+//}
+
+artifacts {
+    archives sourcesJar
+    //archives javadocJar
+}
+
 dependencies {
     compile 'ch.qos.logback:logback-classic:1.1.6' //optional not provided by gradle
     compile 'org.slf4j:slf4j-api:1.7.18'
+    compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.code.gson:gson:2.6.2'
-    compile 'org.bitcoinj:bitcoinj-core:0.13.5'
+    compile 'org.bitcoinj:bitcoinj-core:0.14-SNAPSHOT'
     testCompile 'junit:junit:4.12'
 }
