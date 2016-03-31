@@ -9,6 +9,8 @@ import static org.bitcoinj.script.ScriptOpCodes.OP_ELSE;
 import static org.bitcoinj.script.ScriptOpCodes.OP_ENDIF;
 import static org.bitcoinj.script.ScriptOpCodes.OP_IF;
 
+import java.util.List;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.bitcoinj.core.Address;
@@ -18,6 +20,7 @@ import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptChunk;
 
 
 /**
@@ -120,7 +123,7 @@ public final class TimeLockedAddress {
 	 * 
 	 * @return redeem script
 	 */
-	private Script createRedeemScript() {
+	public Script createRedeemScript() {
 		Script contract = new ScriptBuilder()
 				.op(OP_IF)
 				.data(servicePubKey).op(OP_CHECKSIGVERIFY)
@@ -130,6 +133,69 @@ public final class TimeLockedAddress {
 				.data(userPubKey).op(OP_CHECKSIG)
 				.build();
 		return contract;
+	}
+	
+	public static TimeLockedAddress fromRedeemScript(String scriptHex, NetworkParameters params) {
+		byte[] scriptRaw = Utils.HEX.decode(scriptHex);
+		return fromRedeemScript(scriptRaw, params);
+	}
+	
+	/**
+	 * Transforms a redeem script (see createRedeemScript) into a TimeLockedAddress by 
+	 * extracting the individual script chunks.
+	 * 
+	 * @param scriptRaw raw script program
+	 * @param params
+	 * @return new time locked address
+	 * @throws IllegalArgumentException If script cannot be converted into TimeLockedAddress.
+	 */
+	public static TimeLockedAddress fromRedeemScript(byte[] scriptRaw, NetworkParameters params) {
+		final Script script = new Script(scriptRaw);
+		if (hasExpectedStructure(script)) {
+			// script format is correct. now extract pushdata
+			List<ScriptChunk> chunks = script.getChunks();
+			ECKey serviceK = ECKey.fromPublicOnly(chunks.get(1).data);
+			byte[] servicePubKey = serviceK.getPubKey();
+			ECKey userK = ECKey.fromPublicOnly(chunks.get(8).data);
+			byte[] userPubKey = userK.getPubKey();
+			long locktime = Utils.decodeMPI(Utils.reverseBytes(chunks.get(4).data), false).longValue();
+			
+			return new TimeLockedAddress(userPubKey, servicePubKey, locktime, params);
+		} else {
+			throw new IllegalArgumentException("Script is not a redeemScript of TimeLockedAddress.");
+		}
+	}
+	
+	private static boolean hasExpectedStructure(Script script) {
+		final List<ScriptChunk> chunks = script.getChunks();
+		if (
+				chunks.size() == 10 		&&
+				/*IF*/ 
+				chunks.get(0).isOpCode() 	&& chunks.get(0).equalsOpCode(OP_IF) &&
+				/*servicePubKey*/
+				chunks.get(1).isPushData() 	&& 
+				/*CHECKSIGVERIFY*/
+				chunks.get(2).isOpCode() 	&& chunks.get(2).equalsOpCode(OP_CHECKSIGVERIFY) && 
+				/*ELSE*/
+				chunks.get(3).isOpCode() 	&& chunks.get(3).equalsOpCode(OP_ELSE) && 
+				/*locktime*/
+				chunks.get(4).isPushData() 	&& 
+				/*CHECKLOCKTIMEVERIFY*/
+				chunks.get(5).isOpCode() 	&& chunks.get(5).equalsOpCode(OP_CHECKLOCKTIMEVERIFY) &&
+				/*DROP*/
+				chunks.get(6).isOpCode() 	&& chunks.get(6).equalsOpCode(OP_DROP) &&
+				/*ENDIF*/
+				chunks.get(7).isOpCode() 	&& chunks.get(7).equalsOpCode(OP_ENDIF) &&
+				/*clientPubKey*/
+				chunks.get(8).isPushData() 	&&
+				/*CHECKSIG*/
+				chunks.get(9).isOpCode() 	&& chunks.get(9).equalsOpCode(OP_CHECKSIG)
+			) {
+			
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -250,4 +316,5 @@ public final class TimeLockedAddress {
 		sb.append("]");
 		return sb.toString();
 	}
+
 }

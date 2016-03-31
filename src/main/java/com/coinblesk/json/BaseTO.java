@@ -1,17 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.coinblesk.json;
-
-import java.util.Date;
 
 /**
  *
  * @author Thomas Bocek
  */
-public class BaseTO<T extends BaseTO> {
+public class BaseTO<T extends BaseTO> { 
     private int type = 0; //input/output - always valid
     private String message; //output
     private TxSig messageSig; //input/output

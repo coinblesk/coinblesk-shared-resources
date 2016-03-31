@@ -8,6 +8,8 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,5 +125,42 @@ public class TimeLockedAddressTest {
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
 	}
+	
+	@Test
+	public void testFromRedeemScript() {
+		NetworkParameters params = TestNet3Params.get();
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		Script script = tla.createRedeemScript();
+		
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(script.getProgram(), params);
+		assertEquals(tla, copyTla);
+		assertEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void testFromRedeemScript_badData() {
+		NetworkParameters params = TestNet3Params.get();
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		
+		byte[] program = tla.createRedeemScript().getProgram();
+		program[4]=0x16;
+		Script wrongScript = new Script(program);
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), params);
+		assertNotEquals(tla, copyTla);
+		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void testFromRedeemScript_badScript() {
+		NetworkParameters params = TestNet3Params.get();
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		
+		Script wrongScript = ScriptBuilder.createOutputScript(new ECKey().toAddress(params));
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), params);
+		assertNotEquals(tla, copyTla);
+		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
+	}
+	
+	
 	
 }
