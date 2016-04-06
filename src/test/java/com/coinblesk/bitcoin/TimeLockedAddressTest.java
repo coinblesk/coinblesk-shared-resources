@@ -1,6 +1,15 @@
 package com.coinblesk.bitcoin;
 
+import static org.bitcoinj.script.ScriptOpCodes.OP_CHECKLOCKTIMEVERIFY;
+import static org.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG;
+import static org.bitcoinj.script.ScriptOpCodes.OP_CHECKSIGVERIFY;
+import static org.bitcoinj.script.ScriptOpCodes.OP_DROP;
+import static org.bitcoinj.script.ScriptOpCodes.OP_ELSE;
+import static org.bitcoinj.script.ScriptOpCodes.OP_ENDIF;
+import static org.bitcoinj.script.ScriptOpCodes.OP_IF;
 import static org.junit.Assert.*;
+
+import java.util.Arrays;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
@@ -20,11 +29,15 @@ public class TimeLockedAddressTest {
 	
 	private final long lockTime = 123456;
 	
+	// expected addresses for given keys and locktime
 	private final String MAINNET_ADDRESS = "34DSzRDMVxZZsonGf3zA98vLgt5o1T4EBx";
 	private final String TESTNET_ADDRESS = "2Mumf4A9P7R4v5bQpLBc2m5ubuEHxjb4jy4";
 	
+	private NetworkParameters defaultParams;
+	
 	@Before
 	public void before() {
+		defaultParams = MainNetParams.get();
 		createKeys();
 	}
 	
@@ -34,6 +47,7 @@ public class TimeLockedAddressTest {
 		userPubKey = null;
 		serviceKey = null;
 		servicePubKey = null;
+		defaultParams = null;
 	}
 	
 	private void createKeys() {
@@ -45,11 +59,25 @@ public class TimeLockedAddressTest {
 	}
 	
 	@Test
-	public void test() {
-		NetworkParameters params = TestNet3Params.get();
-		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+	public void testPrint() {
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
 		System.out.println(tla.toString());
 		System.out.println(tla.toStringDetailed());
+	}
+	
+	@Test
+	public void testAddressHash() {
+		TimeLockedAddress tlaMainNet = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, MainNetParams.get());
+		assertNotNull(tlaMainNet.getAddressHash());
+		assertTrue(tlaMainNet.getAddressHash().length == 20);
+		
+		TimeLockedAddress tlaTestNet = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, TestNet3Params.get());
+		assertNotNull(tlaTestNet.getAddressHash());
+		assertTrue(tlaTestNet.getAddressHash().length == 20);
+		
+		// hash does not depend on network.
+		assertTrue(Arrays.equals(tlaMainNet.getAddressHash(), tlaTestNet.getAddressHash()));
+		assertNotEquals(tlaMainNet.getAddress(), tlaTestNet.getAddress());
 	}
 	
 	@Test
@@ -59,6 +87,7 @@ public class TimeLockedAddressTest {
 		Address p2shAddress = tla.getAddress();
 		Address expectedAddr = Address.fromBase58(params, MAINNET_ADDRESS);
 		assertEquals(p2shAddress, expectedAddr);
+		assertTrue(Arrays.equals(tla.getAddressHash(), expectedAddr.getHash160()));
 	}
 	
 	@Test
@@ -68,23 +97,22 @@ public class TimeLockedAddressTest {
 		Address p2shAddress = tla.getAddress();
 		Address expectedAddr = Address.fromBase58(params, TESTNET_ADDRESS);
 		assertEquals(p2shAddress, expectedAddr);
+		assertTrue(Arrays.equals(tla.getAddressHash(), expectedAddr.getHash160()));
 	}
 	
 	@Test
 	public void testEquals() {
-		NetworkParameters params = MainNetParams.get();
-		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
-		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
 		assertEquals(tThis, tOther);
 		assertEquals(tThis.getAddress(), tOther.getAddress());
 	}
 	
 	@Test
 	public void testNotEquals_lockTime() {
-		NetworkParameters params = MainNetParams.get();
 		long lockTimeOther = lockTime+1;
-		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
-		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, servicePubKey, lockTimeOther, params);
+		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, servicePubKey, lockTimeOther, defaultParams);
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
 	}
@@ -95,72 +123,88 @@ public class TimeLockedAddressTest {
 		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, TestNet3Params.get());
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
+		// address hash should still be the same!
+		assertTrue(Arrays.equals(tThis.getAddressHash(), tOther.getAddressHash()));
 	}
 	
 	@Test
 	public void testNotEquals_userkey() {
-		NetworkParameters params = MainNetParams.get();
 		ECKey userKeyOther = new ECKey();
-		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
-		TimeLockedAddress tOther = new TimeLockedAddress(userKeyOther.getPubKey(), servicePubKey, lockTime, params);
+		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		TimeLockedAddress tOther = new TimeLockedAddress(userKeyOther.getPubKey(), servicePubKey, lockTime, defaultParams);
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
+		assertFalse(Arrays.equals(tThis.getAddressHash(), tOther.getAddressHash()));
 	}
 	
 	@Test
 	public void testNotEquals_servicekey() {
-		NetworkParameters params = MainNetParams.get();
 		ECKey serviceKeyOther = new ECKey();
-		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
-		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, serviceKeyOther.getPubKey(), lockTime, params);
+		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		TimeLockedAddress tOther = new TimeLockedAddress(userPubKey, serviceKeyOther.getPubKey(), lockTime, defaultParams);
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
+		assertFalse(Arrays.equals(tThis.getAddressHash(), tOther.getAddressHash()));
 	}
 	
 	@Test
 	public void testNotEquals_keyswitch() {
-		NetworkParameters params = MainNetParams.get();
-		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
-		TimeLockedAddress tOther = new TimeLockedAddress(servicePubKey, userPubKey, lockTime, params);
+		TimeLockedAddress tThis = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		TimeLockedAddress tOther = new TimeLockedAddress(servicePubKey, userPubKey, lockTime, defaultParams);
 		assertNotEquals(tThis, tOther);
 		assertNotEquals(tThis.getAddress(), tOther.getAddress());
+		assertFalse(Arrays.equals(tThis.getAddressHash(), tOther.getAddressHash()));
 	}
 	
 	@Test
 	public void testFromRedeemScript() {
-		NetworkParameters params = TestNet3Params.get();
-		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
 		Script script = tla.createRedeemScript();
 		
-		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(script.getProgram(), params);
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(script.getProgram(), defaultParams);
 		assertEquals(tla, copyTla);
+		assertEquals(tla.getAddress(), copyTla.getAddress());
 		assertEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void testFromRedeemScript_badData() {
-		NetworkParameters params = TestNet3Params.get();
-		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
 		
 		byte[] program = tla.createRedeemScript().getProgram();
-		program[4]=0x16;
+		program[4]=0x16; // random tempering with the program.
 		Script wrongScript = new Script(program);
-		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), params);
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), defaultParams);
 		assertNotEquals(tla, copyTla);
 		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void testFromRedeemScript_badScript() {
-		NetworkParameters params = TestNet3Params.get();
-		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, params);
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
 		
-		Script wrongScript = ScriptBuilder.createOutputScript(new ECKey().toAddress(params));
-		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), params);
+		Script wrongScript = ScriptBuilder.createOutputScript(new ECKey().toAddress(defaultParams));
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), defaultParams);
 		assertNotEquals(tla, copyTla);
 		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
 	}
 	
+	@Test(expected=IllegalArgumentException.class)
+	public void testFromRedeemScript_badScript2() {
+		TimeLockedAddress tla = new TimeLockedAddress(userPubKey, servicePubKey, lockTime, defaultParams);
+		
+		Script wrongScript = new ScriptBuilder()
+				.op(OP_IF)
+				.number(lockTime).op(OP_CHECKLOCKTIMEVERIFY).op(OP_DROP)
+				.op(OP_ELSE)
+				.data(servicePubKey).op(OP_CHECKSIGVERIFY)
+				.op(OP_ENDIF)
+				.data(userPubKey).op(OP_CHECKSIG)
+				.build();
+		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram(), defaultParams);
+		assertNotEquals(tla, copyTla);
+		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
+	}
 	
 	
 }

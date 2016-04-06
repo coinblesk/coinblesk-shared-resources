@@ -37,7 +37,8 @@ public final class TimeLockedAddress {
 	private final byte[] userPubKey;
 	private final byte[] servicePubKey;
 	private final long lockTime;
-	private final Address address;
+	private final byte[] addressHash;
+	
 	private final NetworkParameters params;
 	
 	public TimeLockedAddress(byte[] userPubKey, byte[] servicePubKey, long lockTime, NetworkParameters params) {
@@ -51,14 +52,14 @@ public final class TimeLockedAddress {
 			throw new IllegalArgumentException("lockTime cannot be zero or negative.");
 		}
 		if (params == null) {
-			throw new IllegalArgumentException("NetworkParameters cannot be null.");
+			throw new IllegalArgumentException("NetworkParameters must not be null.");
 		}
 		
 		this.userPubKey = userPubKey;
 		this.servicePubKey = servicePubKey;
 		this.lockTime = lockTime;
+		this.addressHash = createAddressHash();
 		this.params = params;
-		this.address = createAddress();
 	}
 	
 	public byte[] getUserPubKey() {
@@ -74,24 +75,32 @@ public final class TimeLockedAddress {
 	}
 	
 	public Address getAddress() {
+		final Address address = Address.fromP2SHHash(params, addressHash);
+		
+		// Alternative: 
+		// final Script pubkeyScript = createPubkeyScript();
+		// final Address address = Address.fromP2SHScript(params, pubkeyScript);
+		
 		return address;
 	}
-
+	
+	public byte[] getAddressHash() {
+		return addressHash;
+	}
+	
 	public NetworkParameters getNetworkParameters() {
 		return params;
 	}
-	
+
 	/**
-	 * Creates a P2SH address based on the redeem script (time locked contract).
+	 * Creates the hash of the redeem script (Hash160)
 	 * 
-	 * @return the derived address
+	 * @return script hash
 	 */
-	private Address createAddress() {
-		// Address = hash (sha256hash160) of redeemScript
-		// hash of redeemScript is extracted from pubKeyScript
-		final Script pubkeyScript = createPubkeyScript();
-		final Address address = Address.fromP2SHScript(params, pubkeyScript);
-		return address;
+	private byte[] createAddressHash() {
+		final Script redeem = createRedeemScript();
+		final byte[] hash = Utils.sha256hash160(redeem.getProgram());
+		return hash;
 	}
 
 	/**
@@ -104,8 +113,7 @@ public final class TimeLockedAddress {
 	 * See: https://bitcoin.org/en/developer-guide#standard-transactions
 	 */
 	private Script createPubkeyScript() {
-		final Script redeemScript = createRedeemScript();
-		final Script pubkeyScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+		final Script pubkeyScript = ScriptBuilder.createP2SHOutputScript(addressHash);
 		return pubkeyScript;
 	}
 
@@ -167,6 +175,7 @@ public final class TimeLockedAddress {
 	}
 	
 	private static boolean hasExpectedStructure(Script script) {
+		// TODO: maybe there is a nicer way to check the script structure.
 		final List<ScriptChunk> chunks = script.getChunks();
 		if (
 				chunks.size() == 10 		&&
@@ -272,7 +281,7 @@ public final class TimeLockedAddress {
 				.append(userPubKey, other.getUserPubKey())
 				.append(servicePubKey, other.getServicePubKey())
 				.append(lockTime, other.getLockTime())
-				.append(address, other.getAddress())
+				.append(addressHash, other.getAddressHash())
 				.append(params, other.getNetworkParameters())
 				.isEquals();
 	}
@@ -283,7 +292,7 @@ public final class TimeLockedAddress {
 	    		 .append(userPubKey)
 	    		 .append(servicePubKey)
 	    		 .append(lockTime)
-	    		 .append(address)
+	    		 .append(addressHash)
 	    		 .append(params)
 	    		 .toHashCode();
 	}
