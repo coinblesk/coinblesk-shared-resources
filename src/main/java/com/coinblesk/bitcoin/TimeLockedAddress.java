@@ -39,9 +39,7 @@ public final class TimeLockedAddress {
 	private final long lockTime;
 	private final byte[] addressHash;
 	
-	private final NetworkParameters params;
-	
-	public TimeLockedAddress(byte[] userPubKey, byte[] servicePubKey, long lockTime, NetworkParameters params) {
+	public TimeLockedAddress(byte[] userPubKey, byte[] servicePubKey, long lockTime) {
 		if (userPubKey == null || !ECKey.isPubKeyCanonical(userPubKey)) {
 			throw new IllegalArgumentException("userPubKey not valid.");
 		}
@@ -51,15 +49,11 @@ public final class TimeLockedAddress {
 		if (lockTime <= 0) {
 			throw new IllegalArgumentException("lockTime cannot be zero or negative.");
 		}
-		if (params == null) {
-			throw new IllegalArgumentException("NetworkParameters must not be null.");
-		}
 		
 		this.userPubKey = userPubKey;
 		this.servicePubKey = servicePubKey;
 		this.lockTime = lockTime;
 		this.addressHash = createAddressHash();
-		this.params = params;
 	}
 	
 	public byte[] getUserPubKey() {
@@ -74,13 +68,11 @@ public final class TimeLockedAddress {
 		return lockTime;
 	}
 	
-	public Address getAddress() {
+	public Address getAddress(NetworkParameters params) {
 		final Address address = Address.fromP2SHHash(params, addressHash);
-		
 		// Alternative: 
 		// final Script pubkeyScript = createPubkeyScript();
 		// final Address address = Address.fromP2SHScript(params, pubkeyScript);
-		
 		return address;
 	}
 	
@@ -88,10 +80,6 @@ public final class TimeLockedAddress {
 		return addressHash;
 	}
 	
-	public NetworkParameters getNetworkParameters() {
-		return params;
-	}
-
 	/**
 	 * Creates the hash of the redeem script (Hash160)
 	 * 
@@ -112,7 +100,7 @@ public final class TimeLockedAddress {
 	 * 
 	 * See: https://bitcoin.org/en/developer-guide#standard-transactions
 	 */
-	private Script createPubkeyScript() {
+	public Script createPubkeyScript() {
 		final Script pubkeyScript = ScriptBuilder.createP2SHOutputScript(addressHash);
 		return pubkeyScript;
 	}
@@ -143,9 +131,9 @@ public final class TimeLockedAddress {
 		return contract;
 	}
 	
-	public static TimeLockedAddress fromRedeemScript(String scriptHex, NetworkParameters params) {
+	public static TimeLockedAddress fromRedeemScript(String scriptHex) {
 		byte[] scriptRaw = Utils.HEX.decode(scriptHex);
-		return fromRedeemScript(scriptRaw, params);
+		return fromRedeemScript(scriptRaw);
 	}
 	
 	/**
@@ -153,11 +141,10 @@ public final class TimeLockedAddress {
 	 * extracting the individual script chunks.
 	 * 
 	 * @param scriptRaw raw script program
-	 * @param params
 	 * @return new time locked address
 	 * @throws IllegalArgumentException If script cannot be converted into TimeLockedAddress.
 	 */
-	public static TimeLockedAddress fromRedeemScript(byte[] scriptRaw, NetworkParameters params) {
+	public static TimeLockedAddress fromRedeemScript(byte[] scriptRaw) {
 		final Script script = new Script(scriptRaw);
 		if (hasExpectedStructure(script)) {
 			// script format is correct. now extract pushdata
@@ -168,7 +155,7 @@ public final class TimeLockedAddress {
 			byte[] userPubKey = userK.getPubKey();
 			long locktime = Utils.decodeMPI(Utils.reverseBytes(chunks.get(4).data), false).longValue();
 			
-			return new TimeLockedAddress(userPubKey, servicePubKey, locktime, params);
+			return new TimeLockedAddress(userPubKey, servicePubKey, locktime);
 		} else {
 			throw new IllegalArgumentException("Script is not a redeemScript of TimeLockedAddress.");
 		}
@@ -282,7 +269,6 @@ public final class TimeLockedAddress {
 				.append(servicePubKey, other.getServicePubKey())
 				.append(lockTime, other.getLockTime())
 				.append(addressHash, other.getAddressHash())
-				.append(params, other.getNetworkParameters())
 				.isEquals();
 	}
 	
@@ -293,25 +279,38 @@ public final class TimeLockedAddress {
 	    		 .append(servicePubKey)
 	    		 .append(lockTime)
 	    		 .append(addressHash)
-	    		 .append(params)
 	    		 .toHashCode();
 	}
 	
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+	
+	public String toString(NetworkParameters params) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getClass().getSimpleName());
-		sb.append("[Address=").append(getAddress());
+		sb.append("[");
+		if (params != null) {
+			sb.append("Address=").append(getAddress(params));
+		} else {
+			sb.append("AddressHashHex=").append(Utils.HEX.encode(addressHash));
+		}
 		sb.append(", lockTime=").append(lockTime).append("]");
 		return sb.toString();
 	}
 	
-	public String toStringDetailed() {
+	public String toStringDetailed(NetworkParameters params) {
 		final Script script = createRedeemScript();
 		StringBuilder sb = new StringBuilder();
 		sb.append("[").append(getClass().getName()).append("\n");
-		sb.append("\tAddress:\t")
-			.append(getAddress()).append("\n");
+		if(params != null) {
+			sb.append("\tAddress:\t")
+				.append(getAddress(params)).append("\n");
+		} else {
+			sb.append("\tAddressHashHex:\t")
+				.append(Utils.HEX.encode(addressHash)).append("\n");
+		}
 		sb.append("\tLockTime:\t")
 			.append(lockTime).append("\n");
 		sb.append("\tUser Pubkey:\t")
