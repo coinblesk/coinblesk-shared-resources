@@ -23,10 +23,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+
+/**
+ * 
+ * @author Andreas Albrecht
+ *
+ */
 public class TimeLockedAddressTest {
 	private ECKey userKey, serviceKey;
 	private byte[] userPubKey, servicePubKey;
 	
+	// do not change, addresses below are precalculated for this locktime
 	private final long lockTime = 123456;
 	
 	// expected addresses for given keys and locktime

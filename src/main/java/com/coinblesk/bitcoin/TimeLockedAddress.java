@@ -22,6 +22,8 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
 
+import com.coinblesk.util.BitcoinUtils;
+
 
 /**
  * Represents an address based on a time locked contract using CHECKLOCKTIMEVERIFY with the following properties:
@@ -311,8 +313,17 @@ public final class TimeLockedAddress {
 			sb.append("\tAddressHashHex:\t")
 				.append(Utils.HEX.encode(addressHash)).append("\n");
 		}
+		
 		sb.append("\tLockTime:\t")
-			.append(lockTime).append("\n");
+			.append(lockTime).append(" (");
+		if (BitcoinUtils.isLocktimeByTime(lockTime)) {
+			sb.append(Utils.dateTimeFormat(lockTime*1000L));
+		} else {
+			sb.append("blockheight");
+		}
+		sb.append(")\n");
+		
+		
 		sb.append("\tUser Pubkey:\t")
 			.append(Utils.HEX.encode(userPubKey)).append("\n");
 		sb.append("\tService Pubkey:\t")
