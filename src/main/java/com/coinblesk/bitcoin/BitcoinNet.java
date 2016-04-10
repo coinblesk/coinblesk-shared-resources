@@ -9,27 +9,27 @@ package com.coinblesk.bitcoin;
  */
 public enum BitcoinNet {
 
-    UNITTEST, REGTEST, TESTNET, MAINNET;
+	UNITTEST, REGTEST, TESTNET, MAINNET;
 
-    public static BitcoinNet of(String network) {
-        String bitcoinNetLowerCase = network.toLowerCase();
-        switch (bitcoinNetLowerCase) {
-        case "regtest":
-            return REGTEST;
-        case "unittest":
-            return UNITTEST;
-        case "testnet":
-            return TESTNET;
-        case "mainnet":
-            return MAINNET;
-        default:
-            throw new IllegalArgumentException("Invalid network " + network);
-        }
-    }
+	public static BitcoinNet of(String network) {
+		String bitcoinNetLowerCase = network.toLowerCase();
+		switch (bitcoinNetLowerCase) {
+		case "regtest":
+			return REGTEST;
+		case "unittest":
+			return UNITTEST;
+		case "testnet":
+			return TESTNET;
+		case "mainnet":
+			return MAINNET;
+		default:
+			throw new IllegalArgumentException("Invalid network " + network);
+		}
+	}
     
-    @Override
-    public String toString() {
-        return super.toString().toLowerCase();
-    }
+	@Override
+	public String toString() {
+		return super.toString().toLowerCase();
+	}
 
 }

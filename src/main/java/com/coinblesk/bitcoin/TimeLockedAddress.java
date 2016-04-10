@@ -163,6 +163,7 @@ public final class TimeLockedAddress {
 		}
 	}
 	
+	/* verifies that the opcodes are present and equal to the expected codes. */
 	private static boolean hasExpectedStructure(Script script) {
 		// TODO: maybe there is a nicer way to check the script structure.
 		final List<ScriptChunk> chunks = script.getChunks();
@@ -176,7 +177,7 @@ public final class TimeLockedAddress {
 				chunks.get(2).isOpCode() 	&& chunks.get(2).equalsOpCode(OP_CHECKSIGVERIFY) && 
 				/*ELSE*/
 				chunks.get(3).isOpCode() 	&& chunks.get(3).equalsOpCode(OP_ELSE) && 
-				/*locktime*/
+				/*lockTime*/
 				chunks.get(4).isPushData() 	&& 
 				/*CHECKLOCKTIMEVERIFY*/
 				chunks.get(5).isOpCode() 	&& chunks.get(5).equalsOpCode(OP_CHECKLOCKTIMEVERIFY) &&
@@ -229,16 +230,22 @@ public final class TimeLockedAddress {
 		return createScriptSig(true, userSig);
 	}
 	
+	private Script createScriptSig(final boolean spendAfterLockTime, final TransactionSignature... signatures) {
+		final Script redeemScript = createRedeemScript();
+		return createScriptSig(redeemScript.getProgram(), spendAfterLockTime, signatures);
+	}
+	
 	/**
 	 * Constructs a scriptSig for the contract. It has the following form:
 	 * [sig] [sig..] [contract branch = 0|1] [serialized redeemScript]
 	 * 
+	 * @param redeemScriptRaw the redeem script 
 	 * @param spendAfterLockTime true if spending after lock time without service signature.
 	 * @param signatures the signatures, order is relevant
 	 * @return scriptSig
 	 */
-	private Script createScriptSig(final boolean spendAfterLockTime, final TransactionSignature... signatures) {
-		final Script redeemScript = createRedeemScript();
+	public static Script createScriptSig(final byte[] redeemScriptRaw, final boolean spendAfterLockTime, 
+																			final TransactionSignature... signatures) {
 		// IF (1, before expiry, 2 sigs) or ELSE (0, after expiry, 1 sig) branch of script
 		final int branch = spendAfterLockTime ? 0 : 1;
 		final ScriptBuilder sb = new ScriptBuilder();
@@ -246,7 +253,7 @@ public final class TimeLockedAddress {
 			sb.data(sig.encodeToBitcoin());
 		}
 		sb.smallNum(branch);
-		sb.data(redeemScript.getProgram());
+		sb.data(redeemScriptRaw);
 		Script scriptSig = sb.build();
 		return scriptSig;
 	}
@@ -316,7 +323,7 @@ public final class TimeLockedAddress {
 		
 		sb.append("\tLockTime:\t")
 			.append(lockTime).append(" (");
-		if (BitcoinUtils.isLocktimeByTime(lockTime)) {
+		if (BitcoinUtils.isLockTimeByTime(lockTime)) {
 			sb.append(Utils.dateTimeFormat(lockTime*1000L));
 		} else {
 			sb.append("blockheight");

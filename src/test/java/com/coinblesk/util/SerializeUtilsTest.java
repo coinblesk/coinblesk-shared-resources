@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.coinblesk.util;
 
 import com.coinblesk.json.PrepareHalfSignTO;
@@ -11,10 +6,6 @@ import org.bitcoinj.params.UnitTestParams;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- *
- * @author draft
- */
 public class SerializeUtilsTest {
 
     @Test

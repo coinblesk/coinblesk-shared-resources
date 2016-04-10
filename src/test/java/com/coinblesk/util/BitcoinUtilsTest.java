@@ -1,22 +1,12 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.coinblesk.util;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
-import javax.xml.bind.DatatypeConverter;
+
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
@@ -25,10 +15,7 @@ import org.bitcoinj.testing.FakeTxBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- *
- * @author draft
- */
+
 public class BitcoinUtilsTest {
     
     @Test
@@ -93,14 +80,47 @@ public class BitcoinUtilsTest {
     
     @Test
     public void locktimeTest() {
-    	assertFalse(BitcoinUtils.isLocktimeByBlock(0));
-    	assertTrue(BitcoinUtils.isLocktimeByBlock(1));
-    	assertTrue(BitcoinUtils.isLocktimeByBlock(499999999));
-    	assertFalse(BitcoinUtils.isLocktimeByBlock(500000000));
+    	assertTrue(BitcoinUtils.isLockTimeByBlock(0)); // lock time disabled, i.e. block 0
+    	assertTrue(BitcoinUtils.isLockTimeByBlock(1));
+    	assertTrue(BitcoinUtils.isLockTimeByBlock(499999999));
+    	assertFalse(BitcoinUtils.isLockTimeByBlock(500000000));
     	
-    	assertFalse(BitcoinUtils.isLocktimeByTime(0));
-    	assertFalse(BitcoinUtils.isLocktimeByTime(1));
-    	assertFalse(BitcoinUtils.isLocktimeByTime(499999999));
-    	assertTrue(BitcoinUtils.isLocktimeByTime(500000000));
+    	assertFalse(BitcoinUtils.isLockTimeByTime(0));
+    	assertFalse(BitcoinUtils.isLockTimeByTime(1));
+    	assertFalse(BitcoinUtils.isLockTimeByTime(499999999));
+    	assertTrue(BitcoinUtils.isLockTimeByTime(500000000));
+    }
+    
+    @Test
+    public void testIsBeforeLockTime() {
+    	assertTrue( BitcoinUtils.isBeforeLockTime(100, 101) );
+    	assertFalse( BitcoinUtils.isBeforeLockTime(101, 100) );
+    	
+    	assertTrue( BitcoinUtils.isBeforeLockTime(500000100, 500000101) );
+    	assertFalse( BitcoinUtils.isBeforeLockTime(500000101, 500000100) );
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsBeforeLockTime_DifferentTypes_1() {
+    	BitcoinUtils.isBeforeLockTime(499999999, 500000000);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsBeforeLockTime_DifferentTypes_2() {
+    	BitcoinUtils.isBeforeLockTime(500000000, 499999999);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsBeforeLockTime_NegativeToTest() {
+    	BitcoinUtils.isBeforeLockTime(-1, 500000000);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsBeforeLockTime_NegativeCurrent() {
+    	BitcoinUtils.isBeforeLockTime(500000000, -1);
+    	fail();
     }
 }

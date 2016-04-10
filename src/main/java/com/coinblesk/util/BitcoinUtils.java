@@ -1,18 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.coinblesk.util;
 
+import com.coinblesk.bitcoin.TimeLockedAddress;
 import com.google.common.primitives.UnsignedBytes;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
@@ -20,6 +18,7 @@ import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.Transaction.SigHash;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.core.TransactionOutput;
@@ -30,16 +29,12 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author draft
- */
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
 
     final static public int BLOCKS_PER_DAY = 24 * 6;
-
+    
     public static int lockTimeBlockInDays(int nowInDays, int currentHeight) {
         return currentHeight + (nowInDays * BLOCKS_PER_DAY);
     }
@@ -122,7 +117,20 @@ public class BitcoinUtils {
         }
         return signatures;
     }
-
+    
+	public static List<TransactionSignature> partiallySignTLA(Transaction tx, List<byte[]> redeemScripts, ECKey signKey) {
+		final int inputLen = tx.getInputs().size();
+		final List<TransactionSignature> signatures = new ArrayList<>(inputLen);
+		for (int inputIndex = 0; inputIndex < inputLen; ++inputIndex) {
+			TransactionSignature txSig = tx.calculateSignature(
+					inputIndex, signKey, redeemScripts.get(inputIndex), SigHash.ALL, false);
+			signatures.add(txSig);
+			LOG.debug("Partially signed input: {}, redeemScript={}, sig={}", 
+					inputIndex, tx.getInput(inputIndex), txSig);
+		}
+		return signatures;
+	}
+	
     public static boolean clientFirst(List<ECKey> keys, ECKey multisigClientKey) {
         return keys.indexOf(multisigClientKey) == 0;
     }
@@ -248,17 +256,33 @@ public class BitcoinUtils {
         }
         return false;
     }
-
-    public static Transaction createTx(
-            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
-            Address p2shAddressTo, long amountToSpend) {
+    
+    private static boolean isOurP2SHAddress(NetworkParameters params, 
+										TransactionOutput to, Collection<Address> ourAddresses) {
+        final Address a = to.getAddressFromP2SH(params);
+        return a != null && ourAddresses.contains(a);
+    }
+    
+    public static Transaction createTx(NetworkParameters params,
+					    				List<TransactionOutput> outputs, Address addressFrom, 
+					    				Address addressTo, long amountToSpend) {
+    	List<Address> addressList = new ArrayList<>(1);
+    	addressList.add(addressFrom);
+    	return createTx(params, 
+    			outputs, addressList, addressFrom, 
+    			addressTo, amountToSpend);
+    }
+    
+    public static Transaction createTx(NetworkParameters params, 
+    		List<TransactionOutput> outputs, Collection<Address> addressesFrom, Address changeAddress, 
+            Address addressTo, long amountToSpend) {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
 
         List<TransactionInput> unsorted = new ArrayList<TransactionInput>(outputs.size());
         for (TransactionOutput output : outputs) {
-            if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
+            if (isOurP2SHAddress(params, output, addressesFrom)) {
                 TransactionInput ti = tx.addInput(output);
                 totalAmount += output.getValue().value;
                 unsorted.add(ti);
@@ -289,13 +313,13 @@ public class BitcoinUtils {
         long remainingAmount = totalAmount - amountToSpend;
 
         TransactionOutput transactionOutputRecipient
-                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), addressTo);
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
             tx.addOutput(transactionOutputRecipient);
         }
 
         TransactionOutput transactionOutputChange
-                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
         }
@@ -306,6 +330,46 @@ public class BitcoinUtils {
         }
 
         return tx;
+    }
+    
+    public static void processCLTVInputs(final Transaction tx, final Map<String, TimeLockedAddress> timeLockedAddresses, 
+																				final long currentLockTimeThreshold) {
+    	final NetworkParameters params = tx.getParams();
+		final List<TransactionInput> inputs = tx.getInputs();
+		long maxLockTime = 0L;
+		for (int i = 0; i < inputs.size(); ++i) {
+			final TransactionInput input = inputs.get(i);
+			String sentToAddress = input.getOutpoint().getConnectedOutput().getAddressFromP2SH(params).toString();
+			TimeLockedAddress tla = timeLockedAddresses.get(sentToAddress);
+			if (tla == null) {
+				// coins were not sent to TimeLockedAddress
+				continue;
+			}
+			
+			// check whether this inputs requires two signatures or not.
+			if (tla.getLockTime() < currentLockTimeThreshold) {
+				// still below lockTime -> two signatures
+				LOG.debug("Input {} spent before lock time ({} < {})", input, tla.getLockTime(), currentLockTimeThreshold);
+			} else {
+				// after lockTime
+				// - user signature is sufficient.
+				// - transaction must have lockTime set to >= lockTime of input 
+				//   (i.e. max "lockTime of any input"/time locked address).
+				// - input must have sequence number below maxint sequence number (default is ffff...)
+				input.setSequenceNumber(0);
+				if (maxLockTime < tla.getLockTime()) {
+					maxLockTime = tla.getLockTime();
+				}
+				LOG.debug("Input {} spent after lock time ({} >= {})", input, tla.getLockTime(), currentLockTimeThreshold);
+			}
+			
+			
+		}
+		
+		if (maxLockTime > 0) {
+			tx.setLockTime(maxLockTime);
+			LOG.debug("Set nLockeTime of Transaction to {}", maxLockTime);
+		}
     }
 
     public static List<TransactionOutput> myOutputs(NetworkParameters params,
@@ -364,25 +428,23 @@ public class BitcoinUtils {
         return copy;
     }
 
-    private static void sortTransactionInputs(Transaction tx) {
-        //now make it deterministic
-        List<TransactionInput> sorted = sortInputs(tx.getInputs());
-        tx.clearInputs();
-        for (TransactionInput transactionInput : sorted) {
-            tx.addInput(transactionInput);
-        }
+	private static void sortTransactionInputs(Transaction tx) {
+		// now make it deterministic
+		List<TransactionInput> sorted = sortInputs(tx.getInputs());
+		tx.clearInputs();
+		for (TransactionInput transactionInput : sorted) {
+			tx.addInput(transactionInput);
+		}
+	}
 
-    }
-
-    private static void sortTransactionOutputs(Transaction tx) {
-        //now make it deterministic
-        List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
-        tx.clearOutputs();
-        for (TransactionOutput transactionOutput : sorted) {
-            tx.addOutput(transactionOutput);
-        }
-
-    }
+	private static void sortTransactionOutputs(Transaction tx) {
+		// now make it deterministic
+		List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
+		tx.clearOutputs();
+		for (TransactionOutput transactionOutput : sorted) {
+			tx.addOutput(transactionOutput);
+		}
+	}
     
     
     //we are using our own comparator as the one provided by guava crashes android on some devices
@@ -428,14 +490,47 @@ public class BitcoinUtils {
         return ScriptBuilder.createP2SHOutputScript(hash);
     }
     
-    public static boolean isLocktimeByBlock(long locktime) {
+    /**
+     * Compares nLockTime and makes sure that the values are of the same type
+     * i.e. compare time with time and block height with block height
+     * 
+     * @param lockTimeToTest
+     * @param currentLockTime
+     * @throws IllegalArgumentException if nLockTime types do not match or values are negative
+     */
+    public static boolean isBeforeLockTime(long lockTimeToTest, long currentLockTime) {
+    	// check negative
+    	if (lockTimeToTest < 0 || currentLockTime < 0) {
+    		throw new IllegalArgumentException(String.format(
+    				"Lock time must be positive, is {} and {}",
+    				lockTimeToTest, currentLockTime));
+    	}
+    	
+    	// compare lock time variants.
+    	if (!(
+				(isLockTimeByTime (lockTimeToTest) && isLockTimeByTime (currentLockTime)) ||
+				(isLockTimeByBlock(lockTimeToTest) && isLockTimeByBlock(currentLockTime))
+    		)) {
+    		throw new IllegalArgumentException("Cannot compare lock time of different types (time vs. block height)");
+    	}
+    	
+    	// now we are sure that we compare the same type, either time or block height
+    	boolean isBefore = lockTimeToTest < currentLockTime;
+    	return isBefore;
+    }
+    
+    public static boolean isAfterLockTime(long lockTimeToTest, long currentLockTime) {
+    	return !isBeforeLockTime(lockTimeToTest, currentLockTime);
+    }
+    
+    public static boolean isLockTimeByBlock(long locktime) {
     	// see: https://bitcoin.org/en/developer-guide#locktime-and-sequence-number
     	// https://en.bitcoin.it/wiki/Protocol_documentation#tx
     	// Note: 0 disables locktime!
-    	return locktime > 0 && locktime < Transaction.LOCKTIME_THRESHOLD;
+    	return locktime < Transaction.LOCKTIME_THRESHOLD;
     }
     
-    public static boolean isLocktimeByTime(long locktime) {
+    public static boolean isLockTimeByTime(long locktime) {
     	return locktime >= Transaction.LOCKTIME_THRESHOLD; 
     }
 }
