@@ -1,6 +1,6 @@
 package com.coinblesk.util;
 
-import com.coinblesk.json.PrepareHalfSignTO;
+import com.coinblesk.json.SignTO;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.params.UnitTestParams;
 import org.junit.Assert;
@@ -39,7 +39,7 @@ public class SerializeUtilsTest {
     public void testSignatureOk() {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
@@ -52,14 +52,14 @@ public class SerializeUtilsTest {
     public void testSignatureOkSerialize() {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.sign(p, client);
-        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p),
-                PrepareHalfSignTO.class);
+        SignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p),
+                SignTO.class);
         Assert.assertTrue(SerializeUtils.verifySig(p2, client));
     }
 
@@ -67,7 +67,7 @@ public class SerializeUtilsTest {
     public void testSignatureNokSerialize() {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
@@ -75,7 +75,7 @@ public class SerializeUtilsTest {
         SerializeUtils.sign(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         stream = stream.replace("3", "4");
-        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
+        SignTO p2 = SerializeUtils.GSON.fromJson(stream, SignTO.class);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
 
@@ -83,7 +83,7 @@ public class SerializeUtilsTest {
     public void testSignatureNokSerialize2() throws InterruptedException {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
@@ -91,7 +91,7 @@ public class SerializeUtilsTest {
         SerializeUtils.sign(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         //Attention the resolution is on a second basis!
-        PrepareHalfSignTO p2 = SerializeUtils.GSON.fromJson(stream, PrepareHalfSignTO.class);
+        SignTO p2 = SerializeUtils.GSON.fromJson(stream, SignTO.class);
         p2.currentDate(1);
         Assert.assertFalse(SerializeUtils.verifySig(p2, client));
     }
@@ -100,7 +100,7 @@ public class SerializeUtilsTest {
     public void testSignatureRebuild() {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
@@ -113,7 +113,7 @@ public class SerializeUtilsTest {
     public void testSignatureChangedMessage() {
         ECKey client = new ECKey();
         ECKey server = new ECKey();
-        PrepareHalfSignTO p = new PrepareHalfSignTO()
+        SignTO p = new SignTO()
                 .amountToSpend(3)
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())

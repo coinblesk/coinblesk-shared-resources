@@ -6,12 +6,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
@@ -33,75 +31,92 @@ public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
 
-    final static public int BLOCKS_PER_DAY = 24 * 6;
-    
-    public static int lockTimeBlockInDays(int nowInDays, int currentHeight) {
-        return currentHeight + (nowInDays * BLOCKS_PER_DAY);
-    }
+    public static Transaction createTx (
+            NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
+            final Script redeemScript, Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
+            throws CoinbleskException, InsuffientFunds {
 
-    public static List<TransactionInput> convertPointsToInputs(final NetworkParameters params,
-            final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript) {
-        final List<TransactionInput> retVal = new ArrayList<>();
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+
         for (final Pair<TransactionOutPoint, Coin> p : outputsToUse) {
+            if(p.element1() == null) {
+                throw new CoinbleskException("Coin cannot be null");
+            }
+            final Coin coin = p.element1();
             final TransactionInput ti = new TransactionInput(params, null,
-                    redeemScript.getProgram(), p.element0(), p.element1());
-            retVal.add(ti);
+                    redeemScript.getProgram(), p.element0(), coin);
+            tx.addInput(ti);
+            totalAmount += coin.getValue();
         }
-        return retVal;
+        
+        //now make it deterministic
+        sortTransactionInputs(tx);
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
     }
+    
+    public static Transaction createTx (
+            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
+            Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
 
-    public static Transaction generateUnsignedRefundTx(final NetworkParameters params,
-            final List<TransactionOutput> outputsToUse, List<TransactionInput> preBuiltInputs,
-            final Address refundSentTo, Script redeemScript, final int lockTime) {
-        final Transaction refundTransaction = new Transaction(params);
-        long remainingAmount = 0;
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
 
-        final Set<TransactionOutPoint> unique = new HashSet<>();
-        for (final TransactionOutput transactionOutput : outputsToUse) {
-            if (!unique.add(transactionOutput.getOutPointFor())) {
-                continue;
-            }
-            TransactionInput ti = refundTransaction.addInput(transactionOutput);
-            ti.setScriptSig(redeemScript);
-            ti.setSequenceNumber(0); //we want to timelock
-            remainingAmount += transactionOutput.getValue().longValue();
-        }
-        if (preBuiltInputs != null) {
-            for (TransactionInput input : preBuiltInputs) {
-                if (!unique.add(input.getOutpoint())) {
-                    continue;
-                }
-                TransactionInput ti = refundTransaction.addInput(input);
-                ti.setSequenceNumber(0); //we want to timelock
-                remainingAmount += ti.getValue().longValue();
+        for (TransactionOutput output : outputs) {
+            if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
+                tx.addInput(output);
+                totalAmount += output.getValue().getValue();
             }
         }
-
-        sortTransactionInputs(refundTransaction);
+        //now make it deterministic
+        sortTransactionInputs(tx);
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
+    }
+    
+    private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
+            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
+        final int fee = calcFee(tx);
+        LOG.debug("adding tx fee in satoshis {}", fee);
         
+        totalAmount -= fee;
+        if (amountToSpend > totalAmount) {
+            throw new InsuffientFunds();
+        }
+        long remainingAmount = totalAmount - amountToSpend;
+
+        TransactionOutput transactionOutputRecipient
+                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputRecipient);
+        } else {
+            throw new CoinbleskException("Value too small, cannot create tx");
+        }
+
+        TransactionOutput transactionOutputChange
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
+        if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputChange); //back to sender
+        } else {
+            LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
+        }
+        
+        return tx;
+    }
+    
+    private static int calcFee(Transaction tx) {
         //scriptsig ~350 per input
-        //one output ~25
-        int len = refundTransaction.unsafeBitcoinSerialize().length + 
-                25 + (350 * refundTransaction.getInputs().size());
-        
-        LOG.debug("expected refund tx length {}", len);
+        //two output ~50
+        final int len = tx.unsafeBitcoinSerialize().length + 
+                50 + (350 * tx.getInputs().size());
+
+        LOG.debug("expected tx length {}", len);
         
         //as in http://bitcoinexchangerate.org/test/fees
         //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
         //https://bitcoinfees.21.co/
         //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        int fee = (int) (len * 10.562);
-        
-        LOG.debug("adding refund tx fee in satoshis {}", fee);
-        
-        remainingAmount -= fee;
-        final Coin amountToSpend = Coin.valueOf(remainingAmount);
-        final TransactionOutput transactionOutput = refundTransaction.addOutput(amountToSpend, refundSentTo);
-        if (amountToSpend.isLessThan(transactionOutput.getMinNonDustValue())) {
-            return null;
-        }
-        refundTransaction.setLockTime(lockTime);
-        return refundTransaction;
+        final int fee = (int) (len * 10.562);
+        return fee;
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
@@ -261,16 +276,6 @@ public class BitcoinUtils {
 										TransactionOutput to, Collection<Address> ourAddresses) {
         final Address a = to.getAddressFromP2SH(params);
         return a != null && ourAddresses.contains(a);
-    }
-    
-    public static Transaction createTx(NetworkParameters params,
-					    				List<TransactionOutput> outputs, Address addressFrom, 
-					    				Address addressTo, long amountToSpend) {
-    	List<Address> addressList = new ArrayList<>(1);
-    	addressList.add(addressFrom);
-    	return createTx(params, 
-    			outputs, addressList, addressFrom, 
-    			addressTo, amountToSpend);
     }
     
     public static Transaction createTx(NetworkParameters params, 
