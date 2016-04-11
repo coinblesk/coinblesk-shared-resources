@@ -20,13 +20,7 @@ public class SignTO extends BaseTO<SignTO> {
     //choice 2
     private long amountToSpend; //input 
     private String p2shAddressTo; //input
-    private byte[] bloomFilter; //input optional
-    
-    //choice 3
-    private List<Pair<byte[],Long>> refundClientOutpointsCoinPair; //input
-    //private byte[] bloomFilter; //optional, defined above
-    private List<TxSig> refundSignaturesClient; //input //optional
-    
+    private List<Pair<byte[],Long>> outpointsCoinPair; //input
     
     private List<TxSig> serverSignatures; //output
     
@@ -66,30 +60,12 @@ public class SignTO extends BaseTO<SignTO> {
         return p2shAddressTo;
     }
     
-    public SignTO bloomFilter(byte[] bloomFilter) {
-        this.bloomFilter = bloomFilter;
-        return this;
-    }
-
-    public byte[] bloomFilter() {
-        return bloomFilter;
-    }
-    
-    public SignTO refundSignaturesClient(List<TxSig> refundSignaturesClient) {
-        this.refundSignaturesClient = refundSignaturesClient;
+    public SignTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
+        this.outpointsCoinPair = outpointsCoinPair;
         return this;
     }
     
-    public List<TxSig> refundSignaturesClient() {
-        return refundSignaturesClient;
-    }
-    
-    public SignTO refundClientOutpointsCoinPair(List<Pair<byte[],Long>> refundClientOutpointsCoinPair) {
-        this.refundClientOutpointsCoinPair = refundClientOutpointsCoinPair;
-        return this;
-    }
-    
-    public List<Pair<byte[],Long>> refundClientOutpointsCoinPair() {
-        return refundClientOutpointsCoinPair;
+    public List<Pair<byte[],Long>> outpointsCoinPair() {
+        return outpointsCoinPair;
     }
 }

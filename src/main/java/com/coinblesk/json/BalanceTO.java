@@ -11,7 +11,8 @@ package com.coinblesk.json;
  */
 public class BalanceTO extends BaseTO<BalanceTO> {
 
-    private long balance;
+    private byte[] publicKey; //input
+    private long balance; //output
 
     public BalanceTO balance(long balance) {
         this.balance = balance;
@@ -20,5 +21,14 @@ public class BalanceTO extends BaseTO<BalanceTO> {
 
     public long balance() {
         return balance;
+    }
+    
+    public BalanceTO publicKey(byte[] publicKey) {
+        this.publicKey = publicKey;
+        return this;
+    }
+
+    public byte[] publicKey() {
+        return publicKey;
     }
 }
