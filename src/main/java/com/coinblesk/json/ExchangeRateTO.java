@@ -5,38 +5,27 @@
  */
 package com.coinblesk.json;
 
-
-
-import com.coinblesk.util.Currency;
-import java.util.HashMap;
-import java.util.Map;
-
-
 public class ExchangeRateTO extends BaseTO<KeyTO> {
-    
-    private Map<Currency, String> exchangeRates;
-    
-    public ExchangeRateTO() {
-        this.exchangeRates = new HashMap<Currency, String>();
+
+    private String name;
+    private String rate;
+
+    public String name() {
+        return name;
     }
 
-    public Map<Currency, String> getExchangeRates() {
-        return exchangeRates;
+    public ExchangeRateTO name(String name) {
+        this.name = name;
+        return this;
     }
 
-    public void setExchangeRates(Map<Currency, String> exchangeRates) {
-        this.exchangeRates = exchangeRates;
+    public String rate() {
+        return rate;
     }
 
-    public String getExchangeRate(Currency currency) {
-        return exchangeRates.get(currency);
+    public ExchangeRateTO rate(String rate) {
+        this.rate = rate;
+        return this;
     }
 
-    public void setExchangeRate(Currency currency, String exchangeRate) {
-        exchangeRates.put(currency, exchangeRate);
-    }
-    
-    
-    
 }
-
