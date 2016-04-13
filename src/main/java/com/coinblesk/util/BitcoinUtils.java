@@ -88,11 +88,12 @@ public class BitcoinUtils {
             throw new InsuffientFunds();
         }
         long remainingAmount = totalAmount - amountToSpend;
-
+        System.out.println("befor output1 :"+ tx.unsafeBitcoinSerialize().length);
         TransactionOutput transactionOutputRecipient
                 = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
             tx.addOutput(transactionOutputRecipient);
+            System.out.println("after output1 :"+ tx.unsafeBitcoinSerialize().length);
         } else {
             throw new CoinbleskException("Value too small, cannot create tx");
         }
@@ -101,6 +102,7 @@ public class BitcoinUtils {
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
+            System.out.println("after output2 :"+ tx.unsafeBitcoinSerialize().length);
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
@@ -109,10 +111,13 @@ public class BitcoinUtils {
     }
     
     private static int calcFee(Transaction tx) {
-        //scriptsig ~350 per input
-        //two output ~50
-        final int len = tx.unsafeBitcoinSerialize().length + 
-                50 + (350 * tx.getInputs().size());
+        
+        //http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
+        
+        //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
+        //two output ~66 34/32
+        //empty tx is 10 bytes
+        final int len = 10 + (260 * tx.getInputs().size()) + 66;
 
         LOG.debug("expected tx length {}", len);
         
