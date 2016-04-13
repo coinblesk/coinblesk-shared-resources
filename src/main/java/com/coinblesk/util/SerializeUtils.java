@@ -7,7 +7,6 @@ package com.coinblesk.util;
 
 import com.coinblesk.json.BaseTO;
 import com.coinblesk.json.TxSig;
-import com.coinblesk.json.Type;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -19,19 +18,14 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.slf4j.Logger;
@@ -43,8 +37,8 @@ import org.slf4j.LoggerFactory;
  */
 public class SerializeUtils {
 
-    private final static Logger LOG = LoggerFactory.getLogger(SerializeUtils.class);
-    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    final private static Logger LOG = LoggerFactory.getLogger(SerializeUtils.class);
+    final private static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     public static final Gson GSON;
 
@@ -127,34 +121,6 @@ public class SerializeUtils {
         return true;
     }
 
-    public static boolean verifyRefund(Transaction refund, Transaction... inputTxs) {
-        return verifyRefund(refund, Arrays.asList(inputTxs));
-    }
-
-    public static boolean verifyRefund(Transaction refund, List<Transaction> inputTxs) {
-        Map<Sha256Hash, Transaction> tmp = new HashMap<>();
-        for (Transaction t : inputTxs) {
-            tmp.put(t.getHash(), t);
-        }
-        return verifyRefund(refund, tmp);
-    }
-    public static boolean verifyRefund(Transaction refund, Map<Sha256Hash, Transaction> tmp) {
-        try {
-            for (TransactionInput refundInput : refund.getInputs()) {
-                Transaction previous = tmp.get(refundInput.getOutpoint().getHash());
-                if (previous == null) {
-                    LOG.debug("no parent found for {}", refundInput.getOutpoint());
-                    return false;
-                }
-                refundInput.verify(previous.getOutput(refundInput.getOutpoint().getIndex()));
-            }
-        } catch (VerificationException ve) {
-            LOG.debug("verification exception", ve);
-            return false;
-        }
-        return true;
-    }
-
     public static List<TxSig> serializeSignatures(final List<TransactionSignature> signatures) {
         final List<TxSig> retVal = new ArrayList<>(signatures.size());
         for (final TransactionSignature signature : signatures) {
@@ -214,8 +180,8 @@ public class SerializeUtils {
         final char[] hexChars = new char[len * 2];
         for (int j = 0; j < len; j++) {
             final int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
     }
@@ -225,8 +191,8 @@ public class SerializeUtils {
         final char[] hexChars = new char[len * 2];
         for (int j = 0; j < len; j++) {
             final int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
     }

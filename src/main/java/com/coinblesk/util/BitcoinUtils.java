@@ -9,8 +9,6 @@ import com.google.common.primitives.UnsignedBytes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
@@ -35,6 +33,31 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
+    
+    public static Transaction createRefundTx(final NetworkParameters params, 
+            final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
+                            Address refundSendTo, long lockTime) throws CoinbleskException, InsuffientFunds {
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+
+        for (final Pair<TransactionOutPoint, Coin> p : refundClientPoints) {
+            if(p.element1() == null) {
+                throw new CoinbleskException("Coin cannot be null");
+            }
+            final Coin coin = p.element1();
+            final TransactionInput ti = new TransactionInput(params, null,
+                    redeemScript.getProgram(), p.element0(), coin);
+            ti.setSequenceNumber(0); //we want to timelock
+            tx.addInput(ti);
+            totalAmount += coin.getValue();
+        }
+        
+        //now make it deterministic
+        sortTransactionInputs(tx);
+        createRefundTxOutputs(params, tx, totalAmount, refundSendTo);
+        tx.setLockTime(lockTime);
+        return tx;
+    }
 
     public static Transaction createTx (
             NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
@@ -78,6 +101,21 @@ public class BitcoinUtils {
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
     }
     
+    private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
+            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+        final int fee = calcFee(tx);
+        LOG.debug("adding tx fee in satoshis {}", fee);
+        final long remainingAmount = totalAmount - fee;
+        TransactionOutput transactionOutputRecipient
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressTo);
+        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputRecipient);
+        } else {
+            throw new InsuffientFunds();
+        }
+        return tx;
+    }
+    
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
             Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
         final int fee = calcFee(tx);
@@ -88,12 +126,10 @@ public class BitcoinUtils {
             throw new InsuffientFunds();
         }
         long remainingAmount = totalAmount - amountToSpend;
-        System.out.println("befor output1 :"+ tx.unsafeBitcoinSerialize().length);
         TransactionOutput transactionOutputRecipient
                 = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
             tx.addOutput(transactionOutputRecipient);
-            System.out.println("after output1 :"+ tx.unsafeBitcoinSerialize().length);
         } else {
             throw new CoinbleskException("Value too small, cannot create tx");
         }
@@ -102,7 +138,6 @@ public class BitcoinUtils {
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
-            System.out.println("after output2 :"+ tx.unsafeBitcoinSerialize().length);
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
@@ -175,92 +210,7 @@ public class BitcoinUtils {
         return true;
     }
 
-    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromInput(final Transaction tx) {
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getInputs()
-                .size());
-        for (final TransactionInput transactionInput : tx.getInputs()) {
-            transactionOutPoints.add(new Pair<>(
-                    transactionInput.getOutpoint(), transactionInput.getValue()));
-        }
-        return transactionOutPoints;
-    }
-
-    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromOutputFor(NetworkParameters params,
-            final Transaction tx, final Address p2shAddress) {
-        //will be less than list.size
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs()
-                .size());
-        for (final TransactionOutput transactionOutput : tx.getOutputs()) {
-            if (transactionOutput.getAddressFromP2SH(params) != null
-                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
-                transactionOutPoints.add(new Pair<>(
-                        transactionOutput.getOutPointFor(), transactionOutput.getValue()));
-            }
-        }
-        return transactionOutPoints;
-
-    }
-
-    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
-            List<TransactionOutPoint> outpoints, List<TransactionOutput> outputs) {
-        if (outpoints.size() != outputs.size()) {
-            return null;
-        }
-        LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
-        Iterator<TransactionOutput> itOut = outputs.iterator();
-        Iterator<TransactionOutPoint> itOutPoint = outpoints.iterator();
-        while (itOut.hasNext() && itOutPoint.hasNext()) {
-            merged.put(itOutPoint.next(), itOut.next().getValue());
-        }
-
-        return merged;
-    }
-
-    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
-            List<TransactionOutPoint> outpoints, Transaction tx) {
-        LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
-        for (TransactionOutPoint outpoint : outpoints) {
-            //we assume this is the right tx, we cannot compare the hash, as we don't have the full tx yet
-            merged.put(outpoint, tx.getOutput(outpoint.getIndex()).getValue());
-        }
-        return merged;
-    }
-
-    public static List<TransactionOutput> mergeOutputs(NetworkParameters params, Transaction halfSignedTx,
-            List<TransactionOutput> walletOutputs, Address ourAddress) throws Exception {
-        //first remove the outputs from walletOutput that are/will be burned by halfSignedTx
-        final List<TransactionOutput> newOutputs = new ArrayList<>(walletOutputs.size());
-        for (TransactionOutput transactionOutput : walletOutputs) {
-            boolean safeToAdd = true;
-            if (!isOurP2SHAddress(params, transactionOutput, ourAddress)) {
-                continue;
-            }
-            if (halfSignedTx == null) {
-                newOutputs.add(transactionOutput);
-                continue;
-            }
-            for (TransactionInput input : halfSignedTx.getInputs()) {
-                //check if this input is connected the an output from the wallet
-                if (transactionOutput.getOutPointFor().equals(input.getOutpoint())) {
-                    safeToAdd = false;
-                    break;
-                }
-            }
-
-            if (safeToAdd) {
-                newOutputs.add(transactionOutput);
-            }
-        }
-
-        //then add the outputs from the halfSignedTx that will be available in the future
-        for (TransactionOutput transactionOutput : halfSignedTx.getOutputs()) {
-            if (isOurP2SHAddress(params, transactionOutput, ourAddress)) {
-                newOutputs.add(transactionOutput);
-            }
-        }
-        return newOutputs;
-    }
-
+    
     private static boolean isOurP2SHAddress(NetworkParameters params, TransactionOutput to, Address ourAddress) {
         final Address a = to.getAddressFromP2SH(params);
         if (a != null && a.equals(ourAddress)) {
@@ -271,17 +221,7 @@ public class BitcoinUtils {
 
     
 
-    public static List<TransactionOutput> myOutputs(NetworkParameters params,
-            List<TransactionOutput> allOutputs, Address p2shAddress) {
-        final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size() / 2);
-        for (TransactionOutput transactionOutput : allOutputs) {
-            if (transactionOutput.getAddressFromP2SH(params) != null
-                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
-                myOutputs.add(transactionOutput);
-            }
-        }
-        return myOutputs;
-    }
+    
 
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);

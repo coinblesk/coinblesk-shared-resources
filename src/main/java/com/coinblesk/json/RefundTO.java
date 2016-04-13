@@ -5,6 +5,7 @@
  */
 package com.coinblesk.json;
 
+import com.coinblesk.util.Pair;
 import java.util.List;
 
 /**
@@ -13,9 +14,17 @@ import java.util.List;
  */
 public class RefundTO extends BaseTO<RefundTO> {
 
-    private byte[] refundTransaction;
-    private List<TxSig> clientSignatures;
-    private List<TxSig> serverSignatures;
+    //choice 1
+    private byte[] refundTransaction; //input
+    
+    //choice 2
+    private long lockTime; //input 
+    private String refundSendTo; //input
+    private List<Pair<byte[],Long>> outpointsCoinPair; //input
+    
+    private List<TxSig> clientSignatures; //input
+    
+    private List<TxSig> serverSignatures; //output
     
     public RefundTO refundTransaction(byte[] refundTransaction) {
         this.refundTransaction = refundTransaction;
@@ -42,5 +51,32 @@ public class RefundTO extends BaseTO<RefundTO> {
     
     public List<TxSig> serverSignatures() {
         return serverSignatures;
+    }
+    
+    public RefundTO lockTime(long lockTime) {
+        this.lockTime = lockTime;
+        return this;
+    }
+
+    public long lockTime() {
+        return lockTime;
+    }
+    
+    public RefundTO refundSendTo(String refundSendTo) {
+        this.refundSendTo = refundSendTo;
+        return this;
+    }
+
+    public String refundSendTo() {
+        return refundSendTo;
+    }
+    
+    public RefundTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
+        this.outpointsCoinPair = outpointsCoinPair;
+        return this;
+    }
+    
+    public List<Pair<byte[],Long>> outpointsCoinPair() {
+        return outpointsCoinPair;
     }
 }

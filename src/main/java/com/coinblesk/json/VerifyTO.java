@@ -5,7 +5,8 @@
  */
 package com.coinblesk.json;
 
-import org.bitcoinj.core.Address;
+import com.coinblesk.util.Pair;
+import java.util.List;
 
 /**
  *
@@ -13,14 +14,68 @@ import org.bitcoinj.core.Address;
  */
 public class VerifyTO extends BaseTO<VerifyTO> {
 
-    private byte[] fullSignedTransaction; //input
+    //choice 1
+    private byte[] transaction; //input
     
-    public VerifyTO fullSignedTransaction(byte[] fullSignedTransaction) {
-        this.fullSignedTransaction = fullSignedTransaction;
+    //choice 2
+    private long amountToSpend; //input 
+    private String p2shAddressTo; //input
+    private List<Pair<byte[],Long>> outpointsCoinPair; //input
+    
+    private List<TxSig> clientSignatures; //input
+    private List<TxSig> serverSignatures; //input
+    
+    public VerifyTO transaction(byte[] transaction) {
+        this.transaction = transaction;
+        return this;
+    }
+    
+    public byte[] transaction() {
+        return transaction;
+    }
+    
+    public VerifyTO serverSignatures(List<TxSig> serverSignatures) {
+        this.serverSignatures = serverSignatures;
+        return this;
+    }
+    
+    public List<TxSig> serverSignatures() {
+        return serverSignatures;
+    }
+    
+    public VerifyTO clientSignatures(List<TxSig> clientSignatures) {
+        this.clientSignatures = clientSignatures;
+        return this;
+    }
+    
+    public List<TxSig> clientSignatures() {
+        return clientSignatures;
+    }
+    
+    public VerifyTO amountToSpend(long amountToSpend) {
+        this.amountToSpend = amountToSpend;
         return this;
     }
 
-    public byte[] fullSignedTransaction() {
-        return fullSignedTransaction;
+    public long amountToSpend() {
+        return amountToSpend;
+    }
+    
+    public VerifyTO p2shAddressTo(String p2shAddressTo) {
+        this.p2shAddressTo = p2shAddressTo;
+        return this;
+    }
+
+    public String p2shAddressTo() {
+        return p2shAddressTo;
+    }
+    
+    public VerifyTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
+        this.outpointsCoinPair = outpointsCoinPair;
+        return this;
+    }
+    
+    public List<Pair<byte[],Long>> outpointsCoinPair() {
+        return outpointsCoinPair;
     }
 }
