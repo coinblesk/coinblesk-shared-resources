@@ -100,6 +100,23 @@ public class BitcoinUtils {
         sortTransactionInputs(tx);
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
     }
+
+    public static Transaction createSpendAllTx (
+            NetworkParameters params, List<TransactionOutput> outputs,
+            Address p2shAddressFrom,
+            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+        for (TransactionOutput output : outputs) {
+            tx.addInput(output);
+            totalAmount += output.getValue().getValue();
+        }
+        //now make it deterministic
+        sortTransactionInputs(tx);
+
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, totalAmount);
+    }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
             Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
@@ -118,14 +135,12 @@ public class BitcoinUtils {
     
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
             Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
-        final int fee = calcFee(tx);
-        LOG.debug("adding tx fee in satoshis {}", fee);
-        
-        totalAmount -= fee;
+
         if (amountToSpend > totalAmount) {
             throw new InsuffientFunds();
         }
-        long remainingAmount = totalAmount - amountToSpend;
+
+        final long remainingAmount = totalAmount - amountToSpend;
         TransactionOutput transactionOutputRecipient
                 = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
@@ -134,39 +149,39 @@ public class BitcoinUtils {
             throw new CoinbleskException("Value too small, cannot create tx");
         }
 
+        boolean hasChange = false;
         TransactionOutput transactionOutputChange
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
+            hasChange = true;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
+        }
+
+        final int fee = calcFee(tx);
+        if(hasChange){
+            transactionOutputChange.setValue(transactionOutputChange.getValue().subtract(Coin.valueOf(fee)));
+        } else {
+            transactionOutputRecipient.setValue(transactionOutputRecipient.getValue().subtract(Coin.valueOf(fee)));
         }
         
         return tx;
     }
-    
-    private static int calcFee(Transaction tx) {
-        
+
+    public static int calcFee(Transaction tx) {
         //http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
-        
+
         //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
         //two output ~66 34/32
         //empty tx is 10 bytes
-        final int len = 10 + (260 * tx.getInputs().size()) + 66;
-
-        LOG.debug("expected tx length {}", len);
-        
-        //as in http://bitcoinexchangerate.org/test/fees
-        //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        //https://bitcoinfees.21.co/
-        //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        final int fee = (int) (len * 10.562);
-        return fee;
+        int len = 10 + (260 * tx.getInputs().size()) + 32*tx.getOutputs().size();
+        return len * 5; // instant payments can wait some hours to be confirmed, topup will not have redeem script, thus will have more than enough fee to be accepted in next block
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
         final int len = tx.getInputs().size();
-        final List<TransactionSignature> signatures = new ArrayList<>(len);
+        final List<TransactionSignature> signatures = new ArrayList<TransactionSignature>(len);
         for (int i = 0; i < len; i++) {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(
@@ -193,7 +208,7 @@ public class BitcoinUtils {
             return false;
         }
         for (int i = 0; i < len; i++) {
-            List<TransactionSignature> tmp = new ArrayList<>(2);
+            List<TransactionSignature> tmp = new ArrayList<TransactionSignature>(2);
             final TransactionSignature signature1 = signatures1.get(i);
             final TransactionSignature signature2 = signatures2.get(i);
             if (clientFirst) {
@@ -316,7 +331,7 @@ public class BitcoinUtils {
     };
 
     public static Script createRedeemScript(int threshold, List<ECKey> pubkeys) {
-        pubkeys = new ArrayList<>(pubkeys);
+        pubkeys = new ArrayList<ECKey>(pubkeys);
         Collections.sort(pubkeys, PUBKEY_COMPARATOR);
         return ScriptBuilder.createMultiSigOutputScript(threshold, pubkeys);
     }
