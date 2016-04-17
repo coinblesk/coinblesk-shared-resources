@@ -6,6 +6,12 @@
 package com.coinblesk.util;
 
 import com.coinblesk.json.SignTO;
+import com.coinblesk.json.TxSig;
+import com.coinblesk.json.VerifyTO;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.params.UnitTestParams;
 import org.junit.Assert;
@@ -41,7 +47,9 @@ public class SerializeUtilsTest {
                 + "  \"clientPublicKey\": \"Aw5QSWxGgUq7tdklwDY3a+DuqSQVWv0QUuCMo+ILwgeP\\r\\n\"\n"
                 + "  \"amountToSpend\": 3\n"
                 + "}";
-        Assert.assertEquals(SerializeUtils.canonicalizeJSONHash(json1), SerializeUtils.canonicalizeJSONHash(json2));
+        String cjson1 = SerializeUtils.canonicalizeJSON(json1);
+        String cjson2 = SerializeUtils.canonicalizeJSON(json2);
+        Assert.assertEquals(SerializeUtils.hash(cjson1), SerializeUtils.hash(cjson2));
     }
 
     @Test
@@ -131,5 +139,50 @@ public class SerializeUtilsTest {
         p.amountToSpend(4);
         System.err.println(SerializeUtils.GSON.toJson(p));
         Assert.assertFalse(SerializeUtils.verifySig(p, server));
+    }
+    
+    @Test
+    public void testVerifyTO() {
+        for(int i=0;i<100;i++) {
+            testVerify();
+        }
+    }
+    
+    private void testVerify() {
+         ECKey client = new ECKey();
+        VerifyTO verifyTO= new VerifyTO();
+        Random rnd = new Random(42L);
+        verifyTO.amountToSpend(rnd.nextLong());
+        byte[] outpoint = new byte[rnd.nextInt(1000)];
+        rnd.nextBytes(outpoint);
+        Pair<byte[], Long> pair = new Pair<>(outpoint, rnd.nextLong());
+        List<Pair<byte[], Long>> list = new ArrayList<>();
+        list.add(pair);
+        verifyTO.outpointsCoinPair(list);
+        byte[] clientPubKey = new byte[rnd.nextInt(1000)];
+        rnd.nextBytes(clientPubKey);
+        verifyTO.clientPublicKey(clientPubKey);
+        List<TxSig> list1 = new ArrayList<>();
+        int len1 = rnd.nextInt(100);
+        for(int i=0;i<len1;i++) {
+            TxSig ts = new TxSig();
+            ts.sigR(new BigInteger(rnd.nextInt(1000), rnd).toString());
+            ts.sigS(new BigInteger(rnd.nextInt(1000), rnd).toString());
+            list1.add(ts);
+        }
+        
+        int len2 = rnd.nextInt(100);
+        List<TxSig> list2 = new ArrayList<>();
+        for(int i=0;i<len2;i++) {
+            TxSig ts = new TxSig();
+            ts.sigR(new BigInteger(rnd.nextInt(1000), rnd).toString());
+            ts.sigS(new BigInteger(rnd.nextInt(1000), rnd).toString());
+            list2.add(ts);
+        }
+        verifyTO.clientSignatures(list1);
+        verifyTO.serverSignatures(list2);
+        
+        SerializeUtils.sign(verifyTO, client);
+        Assert.assertTrue(SerializeUtils.verifySig(verifyTO, client));
     }
 }

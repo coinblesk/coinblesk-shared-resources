@@ -64,20 +64,23 @@ public class SerializeUtils {
         
     }
 
-    public static <K extends BaseTO> K sign(K k, ECKey ecKey)  {
+    public static <K extends BaseTO> K sign(final K k, final ECKey ecKey)  {
         k.messageSig(null);
-        String json = GSON.toJson(k);
-        Sha256Hash hash = canonicalizeJSONHash(json);
-        LOG.debug("json sign serialized to: [{}]=hash:{}", json, hash);
-        ECKey.ECDSASignature sig = ecKey.sign(hash);
+        final String json = GSON.toJson(k);
+        
+        final String canonicalJSON = canonicalizeJSON(json);
+        final Sha256Hash hash = hash(canonicalJSON); 
+  
+        LOG.debug("json sign serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
+        final ECKey.ECDSASignature sig = ecKey.sign(hash);
         k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
         return k;
     }
     
-    public static Sha256Hash canonicalizeJSONHash(String json) {
-        String lines[] = json.split("\\n");
-        List<String> tmpLines = new ArrayList<>(lines.length);
-        for(String line: lines) {
+    public static String canonicalizeJSON(final String json) {
+        final String lines[] = json.split("\\n");
+        final List<String> tmpLines = new ArrayList<>(lines.length);
+        for( String line: lines) {
             line = line.trim();
             if(line.endsWith(",")) {
                 line = line.substring(0, line.length() - 1);
@@ -85,22 +88,27 @@ public class SerializeUtils {
             tmpLines.add(line);
         }
         Collections.sort(tmpLines);
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for(String line: tmpLines) {
-            sb.append(line);
+            sb.append(line).append("\n");
         }
-        return Sha256Hash.wrap(Sha256Hash.hash(sb.toString().getBytes()));
+        return sb.toString();
+    }
+    
+    public static Sha256Hash hash(final String canonicalizeJSON) {
+        return Sha256Hash.wrap(Sha256Hash.hash(canonicalizeJSON.getBytes()));
     }
 
-    public static <K extends BaseTO> boolean verifySig(K k, ECKey ecKey) {
-        TxSig check = k.messageSig();
-        ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(check.sigR()), new BigInteger(
+    public static <K extends BaseTO> boolean verifySig(final K k, final ECKey ecKey) {
+        final TxSig check = k.messageSig();
+        final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(check.sigR()), new BigInteger(
                 check.sigS()));
         k.messageSig(null);
-        String json = GSON.toJson(k);
+        final String json = GSON.toJson(k);
         
-        Sha256Hash hash = canonicalizeJSONHash(json);
-        LOG.debug("json verify serialized to: [{}]=hash:{}", json, hash);
+        final String canonicalJSON = canonicalizeJSON(json);
+        final Sha256Hash hash = hash(canonicalJSON);
+        LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
         return ecKey.verify(hash, sig);
     }
 
