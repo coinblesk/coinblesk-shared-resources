@@ -25,6 +25,8 @@ public class VerifyTO extends BaseTO<VerifyTO> {
     private List<TxSig> clientSignatures; //input
     private List<TxSig> serverSignatures; //input
     
+    private byte[] fullTx; //output
+    
     public VerifyTO transaction(byte[] transaction) {
         this.transaction = transaction;
         return this;
@@ -32,6 +34,15 @@ public class VerifyTO extends BaseTO<VerifyTO> {
     
     public byte[] transaction() {
         return transaction;
+    }
+    
+    public VerifyTO fullTx(byte[] fullTx) {
+        this.fullTx = fullTx;
+        return this;
+    }
+    
+    public byte[] fullTx() {
+        return fullTx;
     }
     
     public VerifyTO serverSignatures(List<TxSig> serverSignatures) {
