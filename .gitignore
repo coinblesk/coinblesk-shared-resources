@@ -1,8 +1,10 @@
+*.iml
+.idea
+.DS_Store
 /target/
 /.nb-gradle/
 /build/
 /.gradle/
-
 .classpath
 .project
 .settings/

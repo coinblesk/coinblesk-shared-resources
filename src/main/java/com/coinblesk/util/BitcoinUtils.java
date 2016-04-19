@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.bitcoinj.core.Address;
@@ -30,6 +28,31 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
+    
+    public static Transaction createRefundTx(final NetworkParameters params, 
+            final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
+                            Address refundSendTo, long lockTime) throws CoinbleskException, InsuffientFunds {
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+
+        for (final Pair<TransactionOutPoint, Coin> p : refundClientPoints) {
+            if(p.element1() == null) {
+                throw new CoinbleskException("Coin cannot be null");
+            }
+            final Coin coin = p.element1();
+            final TransactionInput ti = new TransactionInput(params, null,
+                    redeemScript.getProgram(), p.element0(), coin);
+            ti.setSequenceNumber(0); //we want to timelock
+            tx.addInput(ti);
+            totalAmount += coin.getValue();
+        }
+        
+        //now make it deterministic
+        sortTransactionInputs(tx);
+        createRefundTxOutputs(params, tx, totalAmount, refundSendTo);
+        tx.setLockTime(lockTime);
+        return tx;
+    }
 
     public static Transaction createTx (
             NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
@@ -72,18 +95,47 @@ public class BitcoinUtils {
         sortTransactionInputs(tx);
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
     }
+
+    public static Transaction createSpendAllTx (
+            NetworkParameters params, List<TransactionOutput> outputs,
+            Address p2shAddressFrom,
+            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+        for (TransactionOutput output : outputs) {
+            tx.addInput(output);
+            totalAmount += output.getValue().getValue();
+        }
+        //now make it deterministic
+        sortTransactionInputs(tx);
+
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, totalAmount);
+    }
+    
+    private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
+            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+        final int fee = calcFee(tx);
+        LOG.debug("adding tx fee in satoshis {}", fee);
+        final long remainingAmount = totalAmount - fee;
+        TransactionOutput transactionOutputRecipient
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressTo);
+        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
+            tx.addOutput(transactionOutputRecipient);
+        } else {
+            throw new InsuffientFunds();
+        }
+        return tx;
+    }
     
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
             Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
-        final int fee = calcFee(tx);
-        LOG.debug("adding tx fee in satoshis {}", fee);
-        
-        totalAmount -= fee;
+
         if (amountToSpend > totalAmount) {
             throw new InsuffientFunds();
         }
-        long remainingAmount = totalAmount - amountToSpend;
 
+        final long remainingAmount = totalAmount - amountToSpend;
         TransactionOutput transactionOutputRecipient
                 = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
@@ -92,36 +144,39 @@ public class BitcoinUtils {
             throw new CoinbleskException("Value too small, cannot create tx");
         }
 
+        boolean hasChange = false;
         TransactionOutput transactionOutputChange
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
         if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
             tx.addOutput(transactionOutputChange); //back to sender
+            hasChange = true;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
+        }
+
+        final int fee = calcFee(tx);
+        if(hasChange){
+            transactionOutputChange.setValue(transactionOutputChange.getValue().subtract(Coin.valueOf(fee)));
+        } else {
+            transactionOutputRecipient.setValue(transactionOutputRecipient.getValue().subtract(Coin.valueOf(fee)));
         }
         
         return tx;
     }
-    
-    private static int calcFee(Transaction tx) {
-        //scriptsig ~350 per input
-        //two output ~50
-        final int len = tx.unsafeBitcoinSerialize().length + 
-                50 + (350 * tx.getInputs().size());
 
-        LOG.debug("expected tx length {}", len);
-        
-        //as in http://bitcoinexchangerate.org/test/fees
-        //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        //https://bitcoinfees.21.co/
-        //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        final int fee = (int) (len * 10.562);
-        return fee;
+    public static int calcFee(Transaction tx) {
+        //http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
+
+        //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
+        //two output ~66 34/32
+        //empty tx is 10 bytes
+        int len = 10 + (260 * tx.getInputs().size()) + 32*tx.getOutputs().size();
+        return len * 5; // instant payments can wait some hours to be confirmed, topup will not have redeem script, thus will have more than enough fee to be accepted in next block
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
         final int len = tx.getInputs().size();
-        final List<TransactionSignature> signatures = new ArrayList<>(len);
+        final List<TransactionSignature> signatures = new ArrayList<TransactionSignature>(len);
         for (int i = 0; i < len; i++) {
             final Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             final TransactionSignature serverSignature = new TransactionSignature(
@@ -133,15 +188,16 @@ public class BitcoinUtils {
         return signatures;
     }
     
-	public static List<TransactionSignature> partiallySignTLA(Transaction tx, List<byte[]> redeemScripts, ECKey signKey) {
-		final int inputLen = tx.getInputs().size();
-		final List<TransactionSignature> signatures = new ArrayList<>(inputLen);
-		for (int inputIndex = 0; inputIndex < inputLen; ++inputIndex) {
-			TransactionSignature txSig = tx.calculateSignature(
-					inputIndex, signKey, redeemScripts.get(inputIndex), SigHash.ALL, false);
+	public static List<TransactionSignature> partiallySign(Transaction tx, List<byte[]> redeemScripts, ECKey signKey) {
+		final int len = tx.getInputs().size();
+		if (redeemScripts.size() != len) {
+			throw new IllegalArgumentException("Number of redeemScripts must match inputs.");
+		}
+		final List<TransactionSignature> signatures = new ArrayList<>(len);
+		for (int i = 0; i < len; ++i) {
+			TransactionSignature txSig = tx.calculateSignature(i, signKey, redeemScripts.get(i), SigHash.ALL, false);
 			signatures.add(txSig);
-			LOG.debug("Partially signed input: {}, redeemScript={}, sig={}", 
-					inputIndex, tx.getInput(inputIndex), txSig);
+			LOG.debug("Partially signed input: {}, redeemScript={}, sig={}", i, tx.getInput(i), txSig);
 		}
 		return signatures;
 	}
@@ -161,7 +217,7 @@ public class BitcoinUtils {
             return false;
         }
         for (int i = 0; i < len; i++) {
-            List<TransactionSignature> tmp = new ArrayList<>(2);
+            List<TransactionSignature> tmp = new ArrayList<TransactionSignature>(2);
             final TransactionSignature signature1 = signatures1.get(i);
             final TransactionSignature signature2 = signatures2.get(i);
             if (clientFirst) {
@@ -178,92 +234,7 @@ public class BitcoinUtils {
         return true;
     }
 
-    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromInput(final Transaction tx) {
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getInputs()
-                .size());
-        for (final TransactionInput transactionInput : tx.getInputs()) {
-            transactionOutPoints.add(new Pair<>(
-                    transactionInput.getOutpoint(), transactionInput.getValue()));
-        }
-        return transactionOutPoints;
-    }
-
-    public static List<Pair<TransactionOutPoint, Coin>> outpointsFromOutputFor(NetworkParameters params,
-            final Transaction tx, final Address p2shAddress) {
-        //will be less than list.size
-        final List<Pair<TransactionOutPoint, Coin>> transactionOutPoints = new ArrayList<>(tx.getOutputs()
-                .size());
-        for (final TransactionOutput transactionOutput : tx.getOutputs()) {
-            if (transactionOutput.getAddressFromP2SH(params) != null
-                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
-                transactionOutPoints.add(new Pair<>(
-                        transactionOutput.getOutPointFor(), transactionOutput.getValue()));
-            }
-        }
-        return transactionOutPoints;
-
-    }
-
-    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
-            List<TransactionOutPoint> outpoints, List<TransactionOutput> outputs) {
-        if (outpoints.size() != outputs.size()) {
-            return null;
-        }
-        LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
-        Iterator<TransactionOutput> itOut = outputs.iterator();
-        Iterator<TransactionOutPoint> itOutPoint = outpoints.iterator();
-        while (itOut.hasNext() && itOutPoint.hasNext()) {
-            merged.put(itOutPoint.next(), itOut.next().getValue());
-        }
-
-        return merged;
-    }
-
-    public static LinkedHashMap<TransactionOutPoint, Coin> convertOutPoints(
-            List<TransactionOutPoint> outpoints, Transaction tx) {
-        LinkedHashMap<TransactionOutPoint, Coin> merged = new LinkedHashMap<>();
-        for (TransactionOutPoint outpoint : outpoints) {
-            //we assume this is the right tx, we cannot compare the hash, as we don't have the full tx yet
-            merged.put(outpoint, tx.getOutput(outpoint.getIndex()).getValue());
-        }
-        return merged;
-    }
-
-    public static List<TransactionOutput> mergeOutputs(NetworkParameters params, Transaction halfSignedTx,
-            List<TransactionOutput> walletOutputs, Address ourAddress) throws Exception {
-        //first remove the outputs from walletOutput that are/will be burned by halfSignedTx
-        final List<TransactionOutput> newOutputs = new ArrayList<>(walletOutputs.size());
-        for (TransactionOutput transactionOutput : walletOutputs) {
-            boolean safeToAdd = true;
-            if (!isOurP2SHAddress(params, transactionOutput, ourAddress)) {
-                continue;
-            }
-            if (halfSignedTx == null) {
-                newOutputs.add(transactionOutput);
-                continue;
-            }
-            for (TransactionInput input : halfSignedTx.getInputs()) {
-                //check if this input is connected the an output from the wallet
-                if (transactionOutput.getOutPointFor().equals(input.getOutpoint())) {
-                    safeToAdd = false;
-                    break;
-                }
-            }
-
-            if (safeToAdd) {
-                newOutputs.add(transactionOutput);
-            }
-        }
-
-        //then add the outputs from the halfSignedTx that will be available in the future
-        for (TransactionOutput transactionOutput : halfSignedTx.getOutputs()) {
-            if (isOurP2SHAddress(params, transactionOutput, ourAddress)) {
-                newOutputs.add(transactionOutput);
-            }
-        }
-        return newOutputs;
-    }
-
+    
     private static boolean isOurP2SHAddress(NetworkParameters params, TransactionOutput to, Address ourAddress) {
         final Address a = to.getAddressFromP2SH(params);
         if (a != null && a.equals(ourAddress)) {
@@ -280,7 +251,8 @@ public class BitcoinUtils {
     
     public static Transaction createTx(NetworkParameters params, 
     		List<TransactionOutput> outputs, Collection<Address> addressesFrom, Address changeAddress, 
-            Address addressTo, long amountToSpend) {
+            Address addressTo, long amountToSpend) 
+            		throws InsuffientFunds, CoinbleskException {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -295,49 +267,34 @@ public class BitcoinUtils {
         }
         //now make it deterministic
         sortTransactionInputs(tx);
-        
-        //scriptsig ~350 per input
-        //two output ~50
-        int len = tx.unsafeBitcoinSerialize().length + 
-                50 + (350 * tx.getInputs().size());
-
-        LOG.debug("expected tx length {}", len);
-        
-        //as in http://bitcoinexchangerate.org/test/fees
-        //also seen in https://blockexplorer.com/tx/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        //https://bitcoinfees.21.co/
-        //http://blockr.io/tx/info/6eba473ee61ed470bb88af9af9bd54de0256bee4e38de2fa6e63e3a5f9de8f0c
-        int fee = (int) (len * 10.562);
-        
-        LOG.debug("adding tx fee in satoshis {}", fee);
-        
-        totalAmount -= fee;
-        if (amountToSpend > totalAmount) {
-            return null;
+      
+        final int fee = calcFee(tx);
+        final long changeAmount = totalAmount - amountToSpend - fee;
+        LOG.debug("Tx - totalAmount={}, amountToSpend={}, fee={}, changeAmount={}", 
+        		totalAmount, amountToSpend, fee, changeAmount);
+        if (changeAmount < 0) {
+            throw new InsuffientFunds();
         }
-        long remainingAmount = totalAmount - amountToSpend;
-
-        TransactionOutput transactionOutputRecipient
-                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), addressTo);
-        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
-            tx.addOutput(transactionOutputRecipient);
+ 
+        
+        TransactionOutput txOutputRecipient = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), addressTo);
+        if (!txOutputRecipient.getValue().isLessThan(txOutputRecipient.getMinNonDustValue())) {
+            tx.addOutput(txOutputRecipient);
         }
 
-        TransactionOutput transactionOutputChange
-                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
-        if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
-            tx.addOutput(transactionOutputChange); //back to sender
+        TransactionOutput txOutputChange = new TransactionOutput(params, tx, Coin.valueOf(changeAmount), changeAddress);
+        if (!txOutputChange.getValue().isLessThan(txOutputChange.getMinNonDustValue())) {
+            tx.addOutput(txOutputChange); //back to sender
         }
-        //sortTransactionOutputs(tx);
 
         if (tx.getOutputs().isEmpty()) {
-            return null;
+            throw new CoinbleskException("Could not create transaction.");
         }
 
         return tx;
     }
     
-    public static void processCLTVInputs(final Transaction tx, final Map<String, TimeLockedAddress> timeLockedAddresses, 
+    public static void setFlagsIfCLTVInputs(final Transaction tx, final Map<String, TimeLockedAddress> timeLockedAddresses, 
 																				final long currentLockTimeThreshold) {
     	final NetworkParameters params = tx.getParams();
 		final List<TransactionInput> inputs = tx.getInputs();
@@ -360,34 +317,22 @@ public class BitcoinUtils {
 				// - user signature is sufficient.
 				// - transaction must have lockTime set to >= lockTime of input 
 				//   (i.e. max "lockTime of any input"/time locked address).
-				// - input must have sequence number below maxint sequence number (default is ffff...)
+				// - input must have sequence number below maxint sequence number (default is 0xFFFFFFFF)
 				input.setSequenceNumber(0);
 				if (maxLockTime < tla.getLockTime()) {
 					maxLockTime = tla.getLockTime();
 				}
 				LOG.debug("Input {} spent after lock time ({} >= {})", input, tla.getLockTime(), currentLockTimeThreshold);
 			}
-			
-			
 		}
 		
 		if (maxLockTime > 0) {
 			tx.setLockTime(maxLockTime);
-			LOG.debug("Set nLockeTime of Transaction to {}", maxLockTime);
+			LOG.debug("Set Transaction nLockeTime={}", maxLockTime);
 		}
     }
 
-    public static List<TransactionOutput> myOutputs(NetworkParameters params,
-            List<TransactionOutput> allOutputs, Address p2shAddress) {
-        final List<TransactionOutput> myOutputs = new ArrayList<>(allOutputs.size() / 2);
-        for (TransactionOutput transactionOutput : allOutputs) {
-            if (transactionOutput.getAddressFromP2SH(params) != null
-                    && transactionOutput.getAddressFromP2SH(params).equals(p2shAddress)) {
-                myOutputs.add(transactionOutput);
-            }
-        }
-        return myOutputs;
-    }
+    
 
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
@@ -480,7 +425,7 @@ public class BitcoinUtils {
     };
 
     public static Script createRedeemScript(int threshold, List<ECKey> pubkeys) {
-        pubkeys = new ArrayList<>(pubkeys);
+        pubkeys = new ArrayList<ECKey>(pubkeys);
         Collections.sort(pubkeys, PUBKEY_COMPARATOR);
         return ScriptBuilder.createMultiSigOutputScript(threshold, pubkeys);
     }

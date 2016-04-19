@@ -51,7 +51,7 @@ public class SignTO extends BaseTO<SignTO> {
         return amountToSpend;
     }
     
-     public SignTO p2shAddressTo(String p2shAddressTo) {
+    public SignTO p2shAddressTo(String p2shAddressTo) {
         this.p2shAddressTo = p2shAddressTo;
         return this;
     }
