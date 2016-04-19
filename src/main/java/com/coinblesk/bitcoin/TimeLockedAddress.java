@@ -9,10 +9,10 @@ import static org.bitcoinj.script.ScriptOpCodes.OP_ELSE;
 import static org.bitcoinj.script.ScriptOpCodes.OP_ENDIF;
 import static org.bitcoinj.script.ScriptOpCodes.OP_IF;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -273,22 +273,15 @@ public final class TimeLockedAddress {
 		}
 		
 		final TimeLockedAddress other = (TimeLockedAddress) object;
-		return new EqualsBuilder()
-				.append(userPubKey, other.getUserPubKey())
-				.append(servicePubKey, other.getServicePubKey())
-				.append(lockTime, other.getLockTime())
-				.append(addressHash, other.getAddressHash())
-				.isEquals();
+		return Arrays.equals(userPubKey, other.getUserPubKey())
+			&& Arrays.equals(servicePubKey, other.servicePubKey)
+			&& lockTime == other.getLockTime()
+			&& Arrays.equals(addressHash, other.getAddressHash());
 	}
 	
 	@Override
 	public int hashCode() {
-	     return new HashCodeBuilder()
-	    		 .append(userPubKey)
-	    		 .append(servicePubKey)
-	    		 .append(lockTime)
-	    		 .append(addressHash)
-	    		 .toHashCode();
+		return Objects.hash(userPubKey, servicePubKey, lockTime, addressHash);
 	}
 	
 	@Override

@@ -36,7 +36,6 @@ artifacts {
 dependencies {
     compile 'ch.qos.logback:logback-classic:1.1.6' //optional not provided by gradle
     compile 'org.slf4j:slf4j-api:1.7.18'
-    compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.code.gson:gson:2.6.2'
     compile 'org.bitcoinj:bitcoinj-core:0.14-SNAPSHOT'
     testCompile 'junit:junit:4.12'
