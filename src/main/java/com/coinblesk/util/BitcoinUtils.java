@@ -92,24 +92,6 @@ public class BitcoinUtils {
         sortTransactionInputs(tx);
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
     }
-    
-    public static Transaction createTx (
-            NetworkParameters params, List<TransactionOutput> outputs, Address p2shAddressFrom,
-            Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
-
-        final Transaction tx = new Transaction(params);
-        long totalAmount = 0;
-
-        for (TransactionOutput output : outputs) {
-            if (isOurP2SHAddress(params, output, p2shAddressFrom)) {
-                tx.addInput(output);
-                totalAmount += output.getValue().getValue();
-            }
-        }
-        //now make it deterministic
-        sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
-    }
 
     public static Transaction createSpendAllTx (
             NetworkParameters params, List<TransactionOutput> outputs,
