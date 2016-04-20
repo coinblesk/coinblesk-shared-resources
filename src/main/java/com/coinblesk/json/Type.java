@@ -42,12 +42,12 @@ public enum Type {
         INPUT_MISMATCH(-20),
         INVALID_LOCKTIME(-21),
         INVALID_TX(-22),
-        JSON_SIGNATURE_ERROR(-23);
-
+        JSON_SIGNATURE_ERROR(-23),
+        CONCURRENCY_ERROR(-24);
         
         private final int type;
         // Reverse-lookup map for getting a day from an abbreviation
-        private static final Map<Integer, Type> lookup = new HashMap<Integer, Type>();
+        private static final Map<Integer, Type> lookup = new HashMap<>();
 
         static {
             for (final Type reason : Type.values()) {

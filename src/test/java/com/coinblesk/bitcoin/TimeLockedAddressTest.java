@@ -195,6 +195,8 @@ public class TimeLockedAddressTest {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void testFromRedeemScript_badData() {
+		// Note: sometimes, this test fails.
+		
 		TimeLockedAddress tla = createTimeLockedAddress();
 		
 		byte[] program = tla.createRedeemScript().getProgram();
