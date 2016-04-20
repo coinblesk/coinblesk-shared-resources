@@ -68,6 +68,25 @@ public class BitcoinUtils {
         tx.setLockTime(lockTime);
         return tx;
     }
+    
+    public static Transaction createTx (
+            NetworkParameters params, final List<TransactionOutput> outputs, 
+            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
+            throws CoinbleskException, InsuffientFunds {
+        
+        final Transaction tx = new Transaction(params);
+        long totalAmount = 0;
+        
+        for(TransactionOutput output:outputs) {
+            tx.addInput(output);
+            totalAmount += output.getValue().value;
+        }
+        
+        //now make it deterministic
+        sortTransactionInputs(tx);
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
+        
+    }
 
     public static Transaction createTx (
             NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
