@@ -1,3 +1,18 @@
+/*
+ * Copyright 2016 The Coinblesk team and the CSG Group at University of Zurich
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.coinblesk.util;
 
 import com.coinblesk.bitcoin.TimeLockedAddress;
@@ -25,6 +40,10 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ *
+ * @author Thomas Bocek
+ */
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
@@ -378,23 +397,25 @@ public class BitcoinUtils {
         return copy;
     }
 
-	private static void sortTransactionInputs(Transaction tx) {
-		// now make it deterministic
-		List<TransactionInput> sorted = sortInputs(tx.getInputs());
-		tx.clearInputs();
-		for (TransactionInput transactionInput : sorted) {
-			tx.addInput(transactionInput);
-		}
-	}
+    private static void sortTransactionInputs(Transaction tx) {
+        //now make it deterministic
+        List<TransactionInput> sorted = sortInputs(tx.getInputs());
+        tx.clearInputs();
+        for (TransactionInput transactionInput : sorted) {
+            tx.addInput(transactionInput);
+        }
 
-	private static void sortTransactionOutputs(Transaction tx) {
-		// now make it deterministic
-		List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
-		tx.clearOutputs();
-		for (TransactionOutput transactionOutput : sorted) {
-			tx.addOutput(transactionOutput);
-		}
-	}
+    }
+
+    private static void sortTransactionOutputs(Transaction tx) {
+        //now make it deterministic
+        List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
+        tx.clearOutputs();
+        for (TransactionOutput transactionOutput : sorted) {
+            tx.addOutput(transactionOutput);
+        }
+
+    }
     
     
     //we are using our own comparator as the one provided by guava crashes android on some devices
