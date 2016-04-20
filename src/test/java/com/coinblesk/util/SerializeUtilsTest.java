@@ -52,8 +52,8 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
-        Assert.assertTrue(SerializeUtils.verifySig(p, client));
+        SerializeUtils.signJSON(p, client);
+        Assert.assertTrue(SerializeUtils.verifyJSONSignature(p, client));
     }
 
     @Test
@@ -65,10 +65,10 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
+        SerializeUtils.signJSON(p, client);
         SignTO p2 = SerializeUtils.GSON.fromJson(SerializeUtils.GSON.toJson(p),
                 SignTO.class);
-        Assert.assertTrue(SerializeUtils.verifySig(p2, client));
+        Assert.assertTrue(SerializeUtils.verifyJSONSignature(p2, client));
     }
 
     @Test
@@ -80,11 +80,11 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
+        SerializeUtils.signJSON(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         stream = stream.replace("3", "4");
         SignTO p2 = SerializeUtils.GSON.fromJson(stream, SignTO.class);
-        Assert.assertFalse(SerializeUtils.verifySig(p2, client));
+        Assert.assertFalse(SerializeUtils.verifyJSONSignature(p2, client));
     }
 
     @Test
@@ -96,12 +96,12 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
+        SerializeUtils.signJSON(p, client);
         String stream = SerializeUtils.GSON.toJson(p);
         //Attention the resolution is on a second basis!
         SignTO p2 = SerializeUtils.GSON.fromJson(stream, SignTO.class);
         p2.currentDate(1);
-        Assert.assertFalse(SerializeUtils.verifySig(p2, client));
+        Assert.assertFalse(SerializeUtils.verifyJSONSignature(p2, client));
     }
 
     @Test
@@ -113,8 +113,8 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
-        Assert.assertFalse(SerializeUtils.verifySig(p, server));
+        SerializeUtils.signJSON(p, client);
+        Assert.assertFalse(SerializeUtils.verifyJSONSignature(p, server));
     }
 
     @Test
@@ -126,10 +126,10 @@ public class SerializeUtilsTest {
                 .clientPublicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
-        SerializeUtils.sign(p, client);
+        SerializeUtils.signJSON(p, client);
         p.amountToSpend(4);
         System.err.println(SerializeUtils.GSON.toJson(p));
-        Assert.assertFalse(SerializeUtils.verifySig(p, server));
+        Assert.assertFalse(SerializeUtils.verifyJSONSignature(p, server));
     }
     
     @Test
@@ -173,7 +173,7 @@ public class SerializeUtilsTest {
         verifyTO.clientSignatures(list1);
         verifyTO.serverSignatures(list2);
         
-        SerializeUtils.sign(verifyTO, client);
-        Assert.assertTrue(SerializeUtils.verifySig(verifyTO, client));
+        SerializeUtils.signJSON(verifyTO, client);
+        Assert.assertTrue(SerializeUtils.verifyJSONSignature(verifyTO, client));
     }
 }

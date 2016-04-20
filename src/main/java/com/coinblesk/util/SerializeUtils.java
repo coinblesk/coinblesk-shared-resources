@@ -74,7 +74,7 @@ public class SerializeUtils {
         
     }
 
-    public static <K extends BaseTO> K sign(final K k, final ECKey ecKey)  {
+    public static <K extends BaseTO> K signJSON(final K k, final ECKey ecKey)  {
         k.messageSig(null);
         final String json = GSON.toJson(k);
         
@@ -109,7 +109,7 @@ public class SerializeUtils {
         return Sha256Hash.wrap(Sha256Hash.hash(canonicalizeJSON.getBytes()));
     }
 
-    public static <K extends BaseTO> boolean verifySig(final K k, final ECKey ecKey) {
+    public static <K extends BaseTO> boolean verifyJSONSignature(final K k, final ECKey ecKey) {
         final TxSig check = k.messageSig();
         final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(check.sigR()), new BigInteger(
                 check.sigS()));
