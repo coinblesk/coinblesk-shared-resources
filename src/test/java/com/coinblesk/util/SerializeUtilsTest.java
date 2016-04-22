@@ -49,7 +49,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -62,7 +62,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -77,7 +77,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -93,7 +93,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -110,7 +110,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -123,7 +123,7 @@ public class SerializeUtilsTest {
         ECKey server = new ECKey();
         SignTO p = new SignTO()
                 .amountToSpend(3)
-                .clientPublicKey(client.getPubKey())
+                .publicKey(client.getPubKey())
                 .p2shAddressTo(server.toAddress(UnitTestParams.get()).toString())
                 .currentDate(System.currentTimeMillis());
         SerializeUtils.signJSON(p, client);
@@ -152,7 +152,7 @@ public class SerializeUtilsTest {
         verifyTO.outpointsCoinPair(list);
         byte[] clientPubKey = new byte[rnd.nextInt(1000)];
         rnd.nextBytes(clientPubKey);
-        verifyTO.clientPublicKey(clientPubKey);
+        verifyTO.publicKey(clientPubKey);
         List<TxSig> list1 = new ArrayList<>();
         int len1 = rnd.nextInt(100);
         for(int i=0;i<len1;i++) {

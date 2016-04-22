@@ -50,7 +50,7 @@ public class BitcoinUtils {
     
     public static Transaction createRefundTx(final NetworkParameters params, 
             final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
-                            Address refundSendTo, long lockTime) throws CoinbleskException, InsuffientFunds {
+                            Address refundSendTo, long lockTimeSeconds) throws CoinbleskException, InsuffientFunds {
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
 
@@ -69,7 +69,7 @@ public class BitcoinUtils {
         //now make it deterministic
         sortTransactionInputs(tx);
         createRefundTxOutputs(params, tx, totalAmount, refundSendTo);
-        tx.setLockTime(lockTime);
+        tx.setLockTime(lockTimeSeconds);
         return tx;
     }
     
