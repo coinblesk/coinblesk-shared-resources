@@ -24,7 +24,7 @@ public class BaseTO<T extends BaseTO> {
     private String message; //output
     private TxSig messageSig; //input/output
     private long currentDate; //input for now
-    private byte[] clientPublicKey; //input
+    private byte[] publicKey; //input
     
     public boolean isInputSet() {
         return messageSig != null && currentDate > 0;
@@ -79,13 +79,13 @@ public class BaseTO<T extends BaseTO> {
         return currentDate;
     }
     
-    public T clientPublicKey(byte[] clientPublicKey) {
-        this.clientPublicKey = clientPublicKey;
+    public T publicKey(byte[] publicKey) {
+        this.publicKey = publicKey;
         return (T)this;
     }
 
-    public byte[] clientPublicKey() {
-        return clientPublicKey;
+    public byte[] publicKey() {
+        return publicKey;
     }
 
     

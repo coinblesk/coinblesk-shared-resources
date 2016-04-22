@@ -21,15 +21,6 @@ package com.coinblesk.json;
  */
 public class KeyTO extends BaseTO<KeyTO> {
 
-    //TODO: use something like: https://gist.github.com/orip/3635246
-    private byte[] publicKey;
-
-    public KeyTO publicKey(byte[] publicKey) {
-        this.publicKey = publicKey;
-        return this;
-    }
-
-    public byte[] publicKey() {
-        return publicKey;
-    }
+    //used from BaseTO
+    //private byte[] serverPublicKey; //output
 }
