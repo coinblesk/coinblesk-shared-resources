@@ -28,7 +28,7 @@ public class RefundTO extends BaseTO<RefundTO> {
     private byte[] refundTransaction; //input
     
     //choice 2
-    private long lockTime; //input 
+    private long lockTimeSeconds; //input 
     private String refundSendTo; //input
     private List<Pair<byte[],Long>> outpointsCoinPair; //input
     
@@ -63,13 +63,13 @@ public class RefundTO extends BaseTO<RefundTO> {
         return serverSignatures;
     }
     
-    public RefundTO lockTime(long lockTime) {
-        this.lockTime = lockTime;
+    public RefundTO lockTimeSeconds(long lockTimeSeconds) {
+        this.lockTimeSeconds = lockTimeSeconds;
         return this;
     }
 
-    public long lockTime() {
-        return lockTime;
+    public long lockTimeSeconds() {
+        return lockTimeSeconds;
     }
     
     public RefundTO refundSendTo(String refundSendTo) {
