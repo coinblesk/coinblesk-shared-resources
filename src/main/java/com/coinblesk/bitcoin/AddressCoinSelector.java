@@ -1,12 +1,15 @@
 package com.coinblesk.bitcoin;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.wallet.CoinSelection;
@@ -21,36 +24,46 @@ import org.bitcoinj.wallet.CoinSelector;
  */
 public class AddressCoinSelector implements CoinSelector {
 	
-	private final byte[] outputScript;
+	private final Address address;
+	private final Map<Address, Coin> balanceByAddress;
+	private final NetworkParameters params;
 	
-	public AddressCoinSelector(Address address) {
-		outputScript = ScriptBuilder
-				.createOutputScript(address)
-				.getProgram();
+	public AddressCoinSelector(Address address, NetworkParameters params) {
+		this.address = address;
+		this.params = params;
+		this.balanceByAddress = new HashMap<>();
 	}
-	
-	public AddressCoinSelector(byte[] outputScript) {
-		this.outputScript = outputScript;
-	}
-	
+		
 	@Override
 	public CoinSelection select(Coin target, List<TransactionOutput> candidates) {
-		if (outputScript == null || outputScript.length <= 0) {
-			throw new IllegalStateException("Cannot select coins if no script provided.");
-		}
-		
 		Coin value = Coin.ZERO;
+		
 		Set<TransactionOutput> selectedOutputs = new HashSet<TransactionOutput>();
 		for (TransactionOutput output : candidates) {
-			if (output.isAvailableForSpending() && 
-						Arrays.equals(outputScript, output.getScriptBytes())) {
+			if (output.isAvailableForSpending()) {
+				Address paidTo = output.getScriptPubKey().getToAddress(params);
+				Coin currentBalance;
+				if (balanceByAddress.containsKey(paidTo)) {
+					currentBalance = balanceByAddress.get(paidTo);
+				} else {
+					currentBalance = Coin.ZERO;					
+				}
+				Coin newBalance = currentBalance.add(output.getValue());
+				balanceByAddress.put(paidTo, newBalance);
 				
-				selectedOutputs.add(output);
-				value = value.add(output.getValue());
+				if (address == null || paidTo.equals(address)) {
+					selectedOutputs.add(output);
+					value = value.add(output.getValue());
+				}
+				
 			}
 		}
 		
 		CoinSelection selection = new CoinSelection(value, selectedOutputs);
 		return selection;
+	}
+	
+	public Map<Address, Coin> getAddressBalances() {
+		return balanceByAddress;
 	}
 }
