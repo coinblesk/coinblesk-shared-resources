@@ -17,6 +17,11 @@ repositories {
     mavenCentral()
 }
 
+test {
+    testLogging.showStandardStreams = true
+    testLogging.exceptionFormat = 'full'
+}
+
 // generate source jar (maven)
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
