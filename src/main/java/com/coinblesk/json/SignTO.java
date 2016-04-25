@@ -32,7 +32,7 @@ public class SignTO extends BaseTO<SignTO> {
     private String p2shAddressTo; //input
     private List<Pair<byte[],Long>> outpointsCoinPair; //input
     
-    private List<TxSig> serverSignatures; //output
+    private List<TxSig> signatures; //input/output
     
     public SignTO transaction(byte[] transaction) {
         this.transaction = transaction;
@@ -43,13 +43,13 @@ public class SignTO extends BaseTO<SignTO> {
         return transaction;
     }
     
-    public SignTO serverSignatures(List<TxSig> serverSignatures) {
-        this.serverSignatures = serverSignatures;
+    public SignTO signatures(List<TxSig> serverSignatures) {
+        this.signatures = serverSignatures;
         return this;
     }
     
-    public List<TxSig> serverSignatures() {
-        return serverSignatures;
+    public List<TxSig> signatures() {
+        return signatures;
     }
     
     public SignTO amountToSpend(long amountToSpend) {

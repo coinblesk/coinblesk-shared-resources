@@ -190,8 +190,8 @@ public class BitcoinUtils {
         //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
         //two output ~66 34/32
         //empty tx is 10 bytes
-        int len = 10 + (260 * tx.getInputs().size()) + 32*tx.getOutputs().size();
-        return len * 5; // instant payments can wait some hours to be confirmed, topup will not have redeem script, thus will have more than enough fee to be accepted in next block
+        int len = 10 + (260 * tx.getInputs().size()) + 34*tx.getOutputs().size();
+        return len * 25; // instant payments can wait some hours to be confirmed, topup will not have redeem script, thus will have more than enough fee to be accepted in next block
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
@@ -314,41 +314,55 @@ public class BitcoinUtils {
         return tx;
     }
     
-    public static void setFlagsIfCLTVInputs(final Transaction tx, final Map<String, TimeLockedAddress> timeLockedAddresses, 
-																				final long currentLockTimeThreshold) {
+    /**
+     * If the Tx spends CLTV outputs, the nLockTime flag of the transaction and the sequence numbers of inputs are set
+     * if the outputs are spent after the CLTV lockTime.
+     * 
+     * @param tx transaction, will be updated.
+     * @param timeLockedAddresses
+     * @param lockTimeSecondsThreshold in seconds, e.g. current Unix time
+     */
+    public static void setFlagsOfCLTVInputs(final Transaction tx, 
+    										final Map<Address, TimeLockedAddress> timeLockedAddresses, 
+											final long lockTimeSecondsThreshold) {
+    	final String tag = "setFlagsOfCLTVInputs";
     	final NetworkParameters params = tx.getParams();
 		final List<TransactionInput> inputs = tx.getInputs();
 		long maxLockTime = 0L;
+		
 		for (int i = 0; i < inputs.size(); ++i) {
 			final TransactionInput input = inputs.get(i);
-			String sentToAddress = input.getOutpoint().getConnectedOutput().getAddressFromP2SH(params).toString();
+			Address sentToAddress = input.getOutpoint().getConnectedOutput().getScriptPubKey().getToAddress(params);
 			TimeLockedAddress tla = timeLockedAddresses.get(sentToAddress);
 			if (tla == null) {
-				// coins were not sent to TimeLockedAddress
+				// if not present, coins were not sent to TimeLockedAddress
 				continue;
 			}
 			
 			// check whether this inputs requires two signatures or not.
-			if (tla.getLockTime() < currentLockTimeThreshold) {
-				// still below lockTime -> two signatures
-				LOG.debug("Input {} spent before lock time ({} < {})", input, tla.getLockTime(), currentLockTimeThreshold);
+			final long inputLockTime = tla.getLockTime();
+			if (inputLockTime > lockTimeSecondsThreshold) {
+				// lock time is in the future -> two signatures required, but no nLockTime/seqNr
+				LOG.debug("{} - Input {} spent before lock time ({} >= {})", 
+						tag, input, inputLockTime, lockTimeSecondsThreshold);
 			} else {
-				// after lockTime
+				// lock time is in the past, i.e. spend after lock time
 				// - user signature is sufficient.
 				// - transaction must have lockTime set to >= lockTime of input 
 				//   (i.e. max "lockTime of any input"/time locked address).
 				// - input must have sequence number below maxint sequence number (default is 0xFFFFFFFF)
 				input.setSequenceNumber(0);
-				if (maxLockTime < tla.getLockTime()) {
-					maxLockTime = tla.getLockTime();
+				if (maxLockTime < inputLockTime) {
+					maxLockTime = inputLockTime;
 				}
-				LOG.debug("Input {} spent after lock time ({} >= {})", input, tla.getLockTime(), currentLockTimeThreshold);
+				LOG.debug("{} - Input {} spent after lock time ({} <= {})", 
+						tag, input, inputLockTime, lockTimeSecondsThreshold);
 			}
 		}
 		
 		if (maxLockTime > 0) {
 			tx.setLockTime(maxLockTime);
-			LOG.debug("Set Transaction nLockeTime={}", maxLockTime);
+			LOG.debug("{} - Set Transaction nLockeTime={}", tag, maxLockTime);
 		}
     }
 
