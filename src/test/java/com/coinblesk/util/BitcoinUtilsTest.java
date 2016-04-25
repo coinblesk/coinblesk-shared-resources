@@ -11,9 +11,10 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.params.UnitTestParams;
-import org.bitcoinj.testing.FakeTxBuilder;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.coinblesk.utilTest.FakeTxBuilder;
 
 
 public class BitcoinUtilsTest {

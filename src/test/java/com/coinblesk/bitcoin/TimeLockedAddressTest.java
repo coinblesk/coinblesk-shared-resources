@@ -22,6 +22,8 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -30,6 +32,8 @@ import org.junit.Test;
  *
  */
 public class TimeLockedAddressTest {
+	private static final Logger LOG = LoggerFactory.getLogger(TimeLockedAddressTest.class);
+	
 	private ECKey userKey, serviceKey;
 	private byte[] userPubKey, servicePubKey;
 	
@@ -75,9 +79,9 @@ public class TimeLockedAddressTest {
 	@Test
 	public void testPrint() {
 		TimeLockedAddress tla = createTimeLockedAddress();
-		System.out.println(tla.toString());
-		System.out.println(tla.toString(defaultParams));
-		System.out.println(tla.toStringDetailed(defaultParams));
+		LOG.info(tla.toString());
+		LOG.info(tla.toString(defaultParams));
+		LOG.info(tla.toStringDetailed(defaultParams));
 	}
 	
 	@Test(expected=IllegalArgumentException.class)

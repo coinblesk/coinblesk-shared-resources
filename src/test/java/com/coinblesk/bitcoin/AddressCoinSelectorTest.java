@@ -13,9 +13,10 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.testing.FakeTxBuilder;
 import org.bitcoinj.wallet.CoinSelection;
 import org.junit.Test;
+
+import com.coinblesk.utilTest.FakeTxBuilder;
 
 public class AddressCoinSelectorTest {
 	private static final NetworkParameters params = MainNetParams.get();
