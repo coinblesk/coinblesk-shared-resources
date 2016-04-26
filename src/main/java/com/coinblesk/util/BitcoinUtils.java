@@ -50,7 +50,7 @@ public class BitcoinUtils {
     
     public static Transaction createRefundTx(final NetworkParameters params, 
             final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
-                            Address refundSendTo, long lockTimeSeconds) throws CoinbleskException, InsuffientFunds {
+                            Address refundSendTo, long lockTimeSeconds) throws CoinbleskException, InsufficientFunds {
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
 
@@ -76,7 +76,7 @@ public class BitcoinUtils {
     public static Transaction createTx (
             NetworkParameters params, final List<TransactionOutput> outputs, 
             Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
-            throws CoinbleskException, InsuffientFunds {
+            throws CoinbleskException, InsufficientFunds {
         
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -95,7 +95,7 @@ public class BitcoinUtils {
     public static Transaction createTx (
             NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
             final Script redeemScript, Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
-            throws CoinbleskException, InsuffientFunds {
+            throws CoinbleskException, InsufficientFunds {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -119,7 +119,7 @@ public class BitcoinUtils {
     public static Transaction createSpendAllTx (
             NetworkParameters params, List<TransactionOutput> outputs,
             Address p2shAddressFrom,
-            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+            Address p2shAddressTo) throws CoinbleskException, InsufficientFunds {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -134,7 +134,7 @@ public class BitcoinUtils {
     }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
-            Address p2shAddressTo) throws CoinbleskException, InsuffientFunds {
+            Address p2shAddressTo) throws CoinbleskException, InsufficientFunds {
         final int fee = calcFee(tx);
         LOG.debug("adding tx fee in satoshis {}", fee);
         final long remainingAmount = totalAmount - fee;
@@ -143,16 +143,16 @@ public class BitcoinUtils {
         if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
             tx.addOutput(transactionOutputRecipient);
         } else {
-            throw new InsuffientFunds();
+            throw new InsufficientFunds();
         }
         return tx;
     }
     
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
-            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsuffientFunds {
+            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsufficientFunds {
 
         if (amountToSpend > totalAmount) {
-            throw new InsuffientFunds();
+            throw new InsufficientFunds();
         }
 
         final long remainingAmount = totalAmount - amountToSpend;
@@ -272,7 +272,7 @@ public class BitcoinUtils {
     public static Transaction createTx(NetworkParameters params, 
     		List<TransactionOutput> outputs, Collection<Address> addressesFrom, Address changeAddress, 
             Address addressTo, long amountToSpend) 
-            		throws InsuffientFunds, CoinbleskException {
+            		throws InsufficientFunds, CoinbleskException {
 
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
@@ -293,7 +293,7 @@ public class BitcoinUtils {
         LOG.debug("Tx - totalAmount={}, amountToSpend={}, fee={}, changeAmount={}", 
         		totalAmount, amountToSpend, fee, changeAmount);
         if (changeAmount < 0) {
-            throw new InsuffientFunds();
+            throw new InsufficientFunds();
         }
  
         
