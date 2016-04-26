@@ -480,33 +480,34 @@ public class BitcoinUtils {
      * Compares nLockTime and makes sure that the values are of the same type
      * i.e. compare time with time and block height with block height
      * 
-     * @param lockTimeToTest
-     * @param currentLockTime
+     * @param currentSecondsOrBlock time in seconds or block height
+     * @param nLockTime time in seconds or block height
+     * @return returns true if the current time is before the lockTime, i.e. lockTime holds and is in the future.
      * @throws IllegalArgumentException if nLockTime types do not match or values are negative
      */
-    public static boolean isBeforeLockTime(long lockTimeToTest, long currentLockTime) {
+    public static boolean isBeforeLockTime(long currentSecondsOrBlock, long nLockTime) {
     	// check negative
-    	if (lockTimeToTest < 0 || currentLockTime < 0) {
+    	if (nLockTime < 0 || currentSecondsOrBlock < 0) {
     		throw new IllegalArgumentException(String.format(
     				"Lock time must be positive, is {} and {}",
-    				lockTimeToTest, currentLockTime));
+    				nLockTime, currentSecondsOrBlock));
     	}
     	
     	// compare lock time variants.
     	if (!(
-				(isLockTimeByTime (lockTimeToTest) && isLockTimeByTime (currentLockTime)) ||
-				(isLockTimeByBlock(lockTimeToTest) && isLockTimeByBlock(currentLockTime))
+				(isLockTimeByTime (nLockTime) && isLockTimeByTime (currentSecondsOrBlock)) ||
+				(isLockTimeByBlock(nLockTime) && isLockTimeByBlock(currentSecondsOrBlock))
     		)) {
     		throw new IllegalArgumentException("Cannot compare lock time of different types (time vs. block height)");
     	}
     	
     	// now we are sure that we compare the same type, either time or block height
-    	boolean isBefore = lockTimeToTest < currentLockTime;
+    	boolean isBefore = currentSecondsOrBlock < nLockTime;
     	return isBefore;
     }
     
-    public static boolean isAfterLockTime(long lockTimeToTest, long currentLockTime) {
-    	return !isBeforeLockTime(lockTimeToTest, currentLockTime);
+    public static boolean isAfterLockTime(long currentSecondsOrBlock, long nLockTime) {
+    	return !isBeforeLockTime(currentSecondsOrBlock, nLockTime);
     }
     
     public static boolean isLockTimeByBlock(long locktime) {

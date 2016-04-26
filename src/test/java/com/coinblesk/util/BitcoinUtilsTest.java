@@ -114,14 +114,47 @@ public class BitcoinUtilsTest {
     }
     
     @Test(expected=IllegalArgumentException.class)
-    public void testIsBeforeLockTime_NegativeToTest() {
+    public void testIsBeforeLockTime_NegativeCurrent() {
     	BitcoinUtils.isBeforeLockTime(-1, 500000000);
     	fail();
     }
     
     @Test(expected=IllegalArgumentException.class)
-    public void testIsBeforeLockTime_NegativeCurrent() {
+    public void testIsBeforeLockTime_NegativeToTest() {
     	BitcoinUtils.isBeforeLockTime(500000000, -1);
+    	fail();
+    }
+    
+    @Test
+    public void testIsAfterLockTime() {
+    	assertFalse( BitcoinUtils.isAfterLockTime(100, 101) );
+    	assertTrue( BitcoinUtils.isAfterLockTime(101, 100) );
+    	
+    	assertFalse( BitcoinUtils.isAfterLockTime(500000100, 500000101) );
+    	assertTrue( BitcoinUtils.isAfterLockTime(500000101, 500000100) );
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsAfterLockTime_DifferentTypes_1() {
+    	BitcoinUtils.isAfterLockTime(499999999, 500000000);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsAfterLockTime_DifferentTypes_2() {
+    	BitcoinUtils.isAfterLockTime(500000000, 499999999);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsAfterLockTime_NegativeCurrent() {
+    	BitcoinUtils.isAfterLockTime(-1, 500000000);
+    	fail();
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testIsAfterLockTime_NegativeToTest() {
+    	BitcoinUtils.isAfterLockTime(500000000, -1);
     	fail();
     }
 }
