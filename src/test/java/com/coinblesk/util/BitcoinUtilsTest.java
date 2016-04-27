@@ -14,9 +14,6 @@ import org.bitcoinj.params.UnitTestParams;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.coinblesk.utilTest.FakeTxBuilder;
-
-
 public class BitcoinUtilsTest {
     
     @Test
