@@ -22,8 +22,12 @@ package com.coinblesk.util;
 public class CoinbleskException extends Exception {
 	private static final long serialVersionUID = -213292082134558867L;
 
-	CoinbleskException(String msg) {
+	public CoinbleskException(String msg) {
         super(msg);
     }
+	
+	public CoinbleskException(String msg, Throwable cause) {
+		super(msg, cause);
+	}
     
 }

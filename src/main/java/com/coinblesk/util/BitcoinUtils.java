@@ -34,6 +34,7 @@ import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
@@ -73,28 +74,28 @@ public class BitcoinUtils {
         return tx;
     }
     
-    public static Transaction createTx (
-            NetworkParameters params, final List<TransactionOutput> outputs, 
-            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
+    public static Transaction createTx(NetworkParameters params, 
+    		final List<TransactionOutput> outputs, final Address changeAddress, 
+    		Address addressTo, long amountToSpend) 
             throws CoinbleskException, InsufficientFunds {
         
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
         
-        for(TransactionOutput output:outputs) {
+        for (TransactionOutput output : outputs) {
             tx.addInput(output);
             totalAmount += output.getValue().value;
         }
         
         //now make it deterministic
         sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
+        return createTxOutputs(params, tx, totalAmount, changeAddress, addressTo, amountToSpend);
         
     }
 
-    public static Transaction createTx (
-            NetworkParameters params, final List<Pair<TransactionOutPoint, Coin>> outputsToUse, 
-            final Script redeemScript, Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) 
+    public static Transaction createTx(NetworkParameters params, 
+    		final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript, Address p2shAddressFrom, 
+    		Address p2shAddressTo, long amountToSpend) 
             throws CoinbleskException, InsufficientFunds {
 
         final Transaction tx = new Transaction(params);
@@ -149,26 +150,26 @@ public class BitcoinUtils {
     }
     
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
-            Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsufficientFunds {
+            Address changeAddress, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsufficientFunds {
 
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
 
         final long remainingAmount = totalAmount - amountToSpend;
-        TransactionOutput transactionOutputRecipient
-                = new TransactionOutput(params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
-        if (!transactionOutputRecipient.getValue().isLessThan(transactionOutputRecipient.getMinNonDustValue())) {
-            tx.addOutput(transactionOutputRecipient);
+        TransactionOutput txOutRecipient = new TransactionOutput(
+        		params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+        if (!txOutRecipient.getValue().isLessThan(txOutRecipient.getMinNonDustValue())) {
+            tx.addOutput(txOutRecipient);
         } else {
             throw new CoinbleskException("Value too small, cannot create tx");
         }
 
         boolean hasChange = false;
-        TransactionOutput transactionOutputChange
-                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), p2shAddressFrom);
-        if (!transactionOutputChange.getValue().isLessThan(transactionOutputChange.getMinNonDustValue())) {
-            tx.addOutput(transactionOutputChange); //back to sender
+        TransactionOutput txOutChange
+                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
+        if (!txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
+            tx.addOutput(txOutChange);
             hasChange = true;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
@@ -176,22 +177,35 @@ public class BitcoinUtils {
 
         final int fee = calcFee(tx);
         if(hasChange){
-            transactionOutputChange.setValue(transactionOutputChange.getValue().subtract(Coin.valueOf(fee)));
+        	txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
         } else {
-            transactionOutputRecipient.setValue(transactionOutputRecipient.getValue().subtract(Coin.valueOf(fee)));
+        	txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
+        }
+        
+        try {
+        	tx.verify();
+        } catch (VerificationException ve) {
+        	LOG.warn("Tx verification failed: ", ve);
+        	throw new CoinbleskException("Could not create transaction: " + ve.getMessage());
         }
         
         return tx;
     }
 
     public static int calcFee(Transaction tx) {
-        //http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
-
+        // http://bitcoinexchangerate.org/test/fees
+        // https://bitcoinfees.21.co/
+        // http://bitcoinfees.com/
+        // http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
+    	
         //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
         //two output ~66 34/32
         //empty tx is 10 bytes
-        int len = 10 + (260 * tx.getInputs().size()) + 34*tx.getOutputs().size();
-        return len * 25; // instant payments can wait some hours to be confirmed, topup will not have redeem script, thus will have more than enough fee to be accepted in next block
+    	
+    	// assume 2 outputs if none present
+    	int outputs = (tx.getOutputs().size() > 0) ? tx.getOutputs().size() : 2;
+        int len = 10 + (260 * tx.getInputs().size()) + (34 * outputs);
+        return len * 30; 
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
@@ -319,11 +333,11 @@ public class BitcoinUtils {
      * if the outputs are spent after the CLTV lockTime.
      * 
      * @param tx transaction, will be updated.
-     * @param timeLockedAddresses
+     * @param outputTimeLocks map that maps from the pubkeyhash of the output (hex encoded) to the corresponding lock time. 
      * @param lockTimeThreshold in seconds (unix time) or block height
      */
     public static void setFlagsOfCLTVInputs(final Transaction tx, 
-    										final Map<Address, TimeLockedAddress> timeLockedAddresses, 
+    										final Map<String, Long> outputTimeLocks, 
 											final long lockTimeThreshold) {
     	final String tag = "setFlagsOfCLTVInputs";
     	final NetworkParameters params = tx.getParams();
@@ -332,16 +346,16 @@ public class BitcoinUtils {
 		
 		for (int i = 0; i < inputs.size(); ++i) {
 			final TransactionInput input = inputs.get(i);
-			Address sentToAddress = input.getOutpoint().getConnectedOutput().getScriptPubKey().getToAddress(params);
-			TimeLockedAddress tla = timeLockedAddresses.get(sentToAddress);
-			if (tla == null) {
-				// if not present, coins were not sent to TimeLockedAddress
+			// since java maps have poor support for array keys, hex encoding is used instead.
+			byte[] addressHash = input.getConnectedOutput().getScriptPubKey().getPubKeyHash();
+			String addressHashHex = Utils.HEX.encode(addressHash);
+			Long inputLockTime = outputTimeLocks.get(addressHashHex);
+			if (inputLockTime == null) {
+				// if not present, assume coins were not sent to TimeLockedAddress
 				continue;
 			}
 			
 			// check whether this inputs requires two signatures or not.
-			final long inputLockTime = tla.getLockTime();
-			
 			if (isBeforeLockTime(lockTimeThreshold, inputLockTime)) {
 				// lock time is in the future -> two signatures required, but no nLockTime/seqNr
 				LOG.debug("{} - Input {} spent before lock time (current {} < lockTime {})", 

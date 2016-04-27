@@ -196,27 +196,7 @@ public class TimeLockedAddressTest {
 		assertEquals(tla.getAddress(defaultParams), copyTla.getAddress(defaultParams));
 		assertEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
 	}
-	
-	@Test(expected=IllegalArgumentException.class)
-	public void testFromRedeemScript_badData() {
-		// Note: sometimes, this test fails.
 		
-		TimeLockedAddress tla = createTimeLockedAddress();
-		
-		byte[] program = tla.createRedeemScript().getProgram();
-		program[10]=0x11; // random tempering with the program.
-		program[20]=0x22;
-		program[30]=0x33;
-		program[40]=0x44;
-		program[50]=0x55;
-		program[60]=0x66;
-		program[70]=0x77;
-		Script wrongScript = new Script(program);
-		TimeLockedAddress copyTla = TimeLockedAddress.fromRedeemScript(wrongScript.getProgram());
-		assertNotEquals(tla, copyTla);
-		assertNotEquals(tla.createRedeemScript(), copyTla.createRedeemScript());
-	}
-	
 	@Test(expected=IllegalArgumentException.class)
 	public void testFromRedeemScript_badScript() {
 		TimeLockedAddress tla = createTimeLockedAddress();
