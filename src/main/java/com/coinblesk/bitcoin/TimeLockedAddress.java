@@ -10,6 +10,7 @@ import static org.bitcoinj.script.ScriptOpCodes.OP_ENDIF;
 import static org.bitcoinj.script.ScriptOpCodes.OP_IF;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +31,13 @@ import com.coinblesk.util.BitcoinUtils;
  * - Given: public key of user and service, locktime.
  * - Before the expiry of the locktime, two signatures are required (user and service both sign in order to spend).
  * - After the locktime, only one signature is required (only user signs in order to spend).
+ * 
+ * A note about spending: spending directly after the lock time may be not possible because the Bitcoin nodes 
+ * do not look at the current time but (1) have some flexibility regarding the block timestamp (up to 2h in the future) 
+ * and (2) newer nodes consider the median time of the past blocks (BIP 113) for relaying.
+ * Thus, nodes may consider a transaction non-final if the lock time is close to the current time.
+ * - Block timestamp: https://en.bitcoin.it/wiki/Block_timestamp
+ * - BIP 113 - Median time-past: https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
  *  
  * @author Andreas Albrecht
  *
@@ -334,6 +342,30 @@ public final class TimeLockedAddress {
 			.append(Utils.HEX.encode(script.getProgram())).append("\n");
 		sb.append("]");
 		return sb.toString();
+	}
+	
+	
+	public static class LockTimeComparator implements Comparator<TimeLockedAddress> {
+		private final boolean ascending;
+
+		public LockTimeComparator() {
+			this(true);
+		}
+
+		public LockTimeComparator(boolean ascending) {
+			this.ascending = ascending;
+		}
+
+		@Override
+		public int compare(TimeLockedAddress lhs, TimeLockedAddress rhs) {
+			if (lhs.lockTime < rhs.lockTime) {
+				return ascending ? -1 : 1;
+			} else if (lhs.lockTime > rhs.lockTime) {
+				return ascending ? 1 : -1;
+			} else {
+				return 0;
+			}
+		}
 	}
 
 }

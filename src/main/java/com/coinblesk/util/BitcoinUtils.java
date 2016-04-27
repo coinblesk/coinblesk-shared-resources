@@ -15,7 +15,6 @@
  */
 package com.coinblesk.util;
 
-import com.coinblesk.bitcoin.TimeLockedAddress;
 import com.google.common.primitives.UnsignedBytes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -384,6 +383,23 @@ public class BitcoinUtils {
 		}
     }
 
+    /**
+     * Verifies the transaction an its inputs.
+     * Works only if tx is connected (required parent of outputs)
+     * 
+     * @param tx
+     */
+	public static void verifyTxFull(Transaction tx) throws CoinbleskException {
+		try {
+			tx.verify();
+			for (TransactionInput txIn : tx.getInputs()) {
+				txIn.verify();
+			}
+		} catch (VerificationException e) {
+			throw new CoinbleskException("Transaction verification failed: " + e.getMessage(), e);
+		}
+	}
+    
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
         Collections.sort(copy, new Comparator<TransactionInput>() {
