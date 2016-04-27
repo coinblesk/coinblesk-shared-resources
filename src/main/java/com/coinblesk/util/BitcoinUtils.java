@@ -315,16 +315,16 @@ public class BitcoinUtils {
     }
     
     /**
-     * If the Tx spends CLTV outputs, the nLockTime flag of the transaction and the sequence numbers of inputs are set
+     * If the Tx spends CLTV outputs, the nLockTime flag of the transaction and the sequence number of inputs are set
      * if the outputs are spent after the CLTV lockTime.
      * 
      * @param tx transaction, will be updated.
      * @param timeLockedAddresses
-     * @param lockTimeSecondsThreshold in seconds, e.g. current Unix time
+     * @param lockTimeThreshold in seconds (unix time) or block height
      */
     public static void setFlagsOfCLTVInputs(final Transaction tx, 
     										final Map<Address, TimeLockedAddress> timeLockedAddresses, 
-											final long lockTimeSecondsThreshold) {
+											final long lockTimeThreshold) {
     	final String tag = "setFlagsOfCLTVInputs";
     	final NetworkParameters params = tx.getParams();
 		final List<TransactionInput> inputs = tx.getInputs();
@@ -341,32 +341,34 @@ public class BitcoinUtils {
 			
 			// check whether this inputs requires two signatures or not.
 			final long inputLockTime = tla.getLockTime();
-			if (inputLockTime > lockTimeSecondsThreshold) {
+			
+			if (isBeforeLockTime(lockTimeThreshold, inputLockTime)) {
 				// lock time is in the future -> two signatures required, but no nLockTime/seqNr
-				LOG.debug("{} - Input {} spent before lock time ({} >= {})", 
-						tag, input, inputLockTime, lockTimeSecondsThreshold);
+				LOG.debug("{} - Input {} spent before lock time (current {} < lockTime {})", 
+						tag, input, lockTimeThreshold, inputLockTime);
 			} else {
 				// lock time is in the past, i.e. spend after lock time
 				// - user signature is sufficient.
 				// - transaction must have lockTime set to >= lockTime of input 
 				//   (i.e. max "lockTime of any input"/time locked address).
 				// - input must have sequence number below maxint sequence number (default is 0xFFFFFFFF)
-				input.setSequenceNumber(0);
+				
+				//   use seqNumber (max int - 1) in order to avoid replace-by-fee issues (RBF, BIP 125), see:
+				//	 https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki
+				input.setSequenceNumber(TransactionInput.NO_SEQUENCE - 1);
 				if (maxLockTime < inputLockTime) {
 					maxLockTime = inputLockTime;
 				}
-				LOG.debug("{} - Input {} spent after lock time ({} <= {})", 
-						tag, input, inputLockTime, lockTimeSecondsThreshold);
+				LOG.debug("{} - Input {} spent after lock time (current {} >= lockTime {})", 
+						tag, input, inputLockTime, lockTimeThreshold);
 			}
 		}
 		
 		if (maxLockTime > 0) {
 			tx.setLockTime(maxLockTime);
-			LOG.debug("{} - Set Transaction nLockeTime={}", tag, maxLockTime);
+			LOG.debug("{} - Set Transaction nLockTime={}", tag, maxLockTime);
 		}
     }
-
-    
 
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
         final List<TransactionInput> copy = new ArrayList<TransactionInput>(unsorted);
