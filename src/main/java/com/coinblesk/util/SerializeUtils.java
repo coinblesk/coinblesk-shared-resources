@@ -111,14 +111,15 @@ public class SerializeUtils {
 
     public static <K extends BaseTO> boolean verifyJSONSignature(final K k, final ECKey ecKey) {
         final TxSig check = k.messageSig();
-        final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(new BigInteger(check.sigR()), new BigInteger(
-                check.sigS()));
+        final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(
+        		new BigInteger(check.sigR()), new BigInteger(check.sigS()));
         k.messageSig(null);
         final String json = GSON.toJson(k);
+        k.messageSig(check);
         
         final String canonicalJSON = canonicalizeJSON(json);
         final Sha256Hash hash = hash(canonicalJSON);
-        LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
+        LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);        
         return ecKey.verify(hash, sig);
     }
 
