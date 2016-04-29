@@ -49,7 +49,7 @@ public enum Type {
         TX_ERROR(-18);
         
         private final int type;
-        // Reverse-lookup map for getting a day from an abbreviation
+        // Reverse-lookup map for getting a type by int
         private static final Map<Integer, Type> lookup = new HashMap<>();
 
         static {
@@ -68,5 +68,13 @@ public enum Type {
         
         public static Type get(final int nr) {
             return lookup.get(nr);
+        }
+        
+        public boolean isSuccess() {
+        	return type >= 0;
+        }
+        
+        public boolean isError() {
+        	return !isSuccess();
         }
 }
