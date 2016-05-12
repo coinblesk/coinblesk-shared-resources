@@ -385,7 +385,7 @@ public class BitcoinUtils {
 
     /**
      * Verifies the transaction an its inputs.
-     * Works only if tx is connected (required parent of outputs)
+     * Works only if Tx is connected (required parent of outputs)
      * 
      * @param tx
      */
