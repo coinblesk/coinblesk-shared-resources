@@ -23,6 +23,7 @@ import java.util.Map;
  * @author Thomas Bocek
  */
 public enum Type {
+		SUCCESS_BUT_ADDRESS_ALREADY_EXISTS(5),
         SUCCESS_BUT_KEY_ALREADY_EXISTS(4),
         SUCCESS_BUT_NO_INSTANT_PAYMENT(3),
         SUCCESS_BUT_EMAIL_ALREADY_EXISTS_NOT_ACTIVATED(2),
@@ -46,7 +47,8 @@ public enum Type {
         INPUT_MISMATCH(-15),
         JSON_SIGNATURE_ERROR(-16),
         CONCURRENCY_ERROR(-17),
-        TX_ERROR(-18);
+        TX_ERROR(-18),
+        LOCKTIME_ERROR(-19);
         
         private final int type;
         // Reverse-lookup map for getting a type by int

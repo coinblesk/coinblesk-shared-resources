@@ -1,4 +1,18 @@
-
+/*
+ * Copyright 2016 The Coinblesk team and the CSG Group at University of Zurich
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.coinblesk.bitcoin;
 
 import static org.bitcoinj.script.ScriptOpCodes.OP_CHECKLOCKTIMEVERIFY;
@@ -28,9 +42,9 @@ import com.coinblesk.util.BitcoinUtils;
 
 /**
  * Represents an address based on a time locked contract using CHECKLOCKTIMEVERIFY with the following properties:
- * - Given: public key of user and service, locktime.
- * - Before the expiry of the locktime, two signatures are required (user and service both sign in order to spend).
- * - After the locktime, only one signature is required (only user signs in order to spend).
+ * - Given: public key of client and server, lockTime.
+ * - Before the expiry of the lockTime, two signatures are required (client and server both sign in order to spend).
+ * - After the lockTime, only one signature is required (only client signs in order to spend).
  * 
  * A note about spending: spending directly after the lock time may be not possible because the Bitcoin nodes 
  * do not look at the current time but (1) have some flexibility regarding the block timestamp (up to 2h in the future) 
@@ -44,34 +58,34 @@ import com.coinblesk.util.BitcoinUtils;
  */
 public final class TimeLockedAddress {
 	
-	private final byte[] userPubKey;
-	private final byte[] servicePubKey;
+	private final byte[] clientPubKey;
+	private final byte[] serverPubKey;
 	private final long lockTime;
 	private final byte[] addressHash;
 	
-	public TimeLockedAddress(byte[] userPubKey, byte[] servicePubKey, long lockTime) {
-		if (userPubKey == null || !ECKey.isPubKeyCanonical(userPubKey)) {
-			throw new IllegalArgumentException("userPubKey not valid.");
+	public TimeLockedAddress(byte[] clientPubKey, byte[] serverPubKey, long lockTime) {
+		if (clientPubKey == null || !ECKey.isPubKeyCanonical(clientPubKey)) {
+			throw new IllegalArgumentException("clientPubKey not valid.");
 		}
-		if (servicePubKey == null || !ECKey.isPubKeyCanonical(servicePubKey)) {
-			throw new IllegalArgumentException("servicePubKey not valid.");
+		if (serverPubKey == null || !ECKey.isPubKeyCanonical(serverPubKey)) {
+			throw new IllegalArgumentException("serverPubKey not valid.");
 		}
 		if (lockTime <= 0) {
 			throw new IllegalArgumentException("lockTime cannot be zero or negative.");
 		}
 		
-		this.userPubKey = userPubKey;
-		this.servicePubKey = servicePubKey;
+		this.clientPubKey = clientPubKey;
+		this.serverPubKey = serverPubKey;
 		this.lockTime = lockTime;
 		this.addressHash = createAddressHash();
 	}
 	
-	public byte[] getUserPubKey() {
-		return userPubKey;
+	public byte[] getClientPubKey() {
+		return clientPubKey;
 	}
 	
-	public byte[] getServicePubKey() {
-		return servicePubKey;
+	public byte[] getServerPubKey() {
+		return serverPubKey;
 	}
 	
 	public long getLockTime() {
@@ -119,11 +133,11 @@ public final class TimeLockedAddress {
 	 * Create a redeem script with the following time locked contract:
 	 *
 	 * IF
-	 *   <service pubkey> CHECKSIGVERIFY
+	 *   <server pubkey> CHECKSIGVERIFY
 	 * ELSE
 	 *   <locktime> CHECKLOCKTIMEVERIFY DROP
 	 * ENDIF
-	 * <user pubkey> CHECKSIG
+	 * <client pubkey> CHECKSIG
 	 * 
 	 * See BIP 65 / CLTV:  https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki
 	 * 
@@ -132,11 +146,11 @@ public final class TimeLockedAddress {
 	public Script createRedeemScript() {
 		Script contract = new ScriptBuilder()
 				.op(OP_IF)
-				.data(servicePubKey).op(OP_CHECKSIGVERIFY)
+				.data(serverPubKey).op(OP_CHECKSIGVERIFY)
 				.op(OP_ELSE)
 				.number(lockTime).op(OP_CHECKLOCKTIMEVERIFY).op(OP_DROP)
 				.op(OP_ENDIF)
-				.data(userPubKey).op(OP_CHECKSIG)
+				.data(clientPubKey).op(OP_CHECKSIG)
 				.build();
 		return contract;
 	}
@@ -159,13 +173,13 @@ public final class TimeLockedAddress {
 		if (hasExpectedStructure(script)) {
 			// script format is correct. now extract pushdata
 			List<ScriptChunk> chunks = script.getChunks();
-			ECKey serviceK = ECKey.fromPublicOnly(chunks.get(1).data);
-			byte[] servicePubKey = serviceK.getPubKey();
-			ECKey userK = ECKey.fromPublicOnly(chunks.get(8).data);
-			byte[] userPubKey = userK.getPubKey();
+			ECKey serverECKey = ECKey.fromPublicOnly(chunks.get(1).data);
+			byte[] serverPubKey = serverECKey.getPubKey();
+			ECKey clientECKey = ECKey.fromPublicOnly(chunks.get(8).data);
+			byte[] clientPubKey = clientECKey.getPubKey();
 			long locktime = Utils.decodeMPI(Utils.reverseBytes(chunks.get(4).data), false).longValue();
 			
-			return new TimeLockedAddress(userPubKey, servicePubKey, locktime);
+			return new TimeLockedAddress(clientPubKey, serverPubKey, locktime);
 		} else {
 			throw new IllegalArgumentException("Script is not a redeemScript of TimeLockedAddress.");
 		}
@@ -179,7 +193,7 @@ public final class TimeLockedAddress {
 				chunks.size() == 10 		&&
 				/*IF*/ 
 				chunks.get(0).isOpCode() 	&& chunks.get(0).equalsOpCode(OP_IF) &&
-				/*servicePubKey*/
+				/*serverPubKey*/
 				chunks.get(1).isPushData() 	&& 
 				/*CHECKSIGVERIFY*/
 				chunks.get(2).isOpCode() 	&& chunks.get(2).equalsOpCode(OP_CHECKSIGVERIFY) && 
@@ -209,33 +223,33 @@ public final class TimeLockedAddress {
 	 * Creates a scriptSig that can be used in spending transactions before the locktime. 
 	 * Both signatures are required.
 	 * 
-	 * @param userSig signature of the user
-	 * @param serviceSig signature of the service
+	 * @param clientSig signature of the client
+	 * @param serverSig signature of the server
 	 * @return scriptSig
 	 */
-	public Script createScriptSigBeforeLockTime(TransactionSignature userSig, TransactionSignature serviceSig) {
-		if (userSig == null) {
-			throw new IllegalArgumentException("Transaction signature userSig must not be null.");
+	public Script createScriptSigBeforeLockTime(TransactionSignature clientSig, TransactionSignature serverSig) {
+		if (clientSig == null) {
+			throw new IllegalArgumentException("Transaction signature clientSig must not be null.");
 		}
-		if (serviceSig == null) {
+		if (serverSig == null) {
 			throw new IllegalArgumentException(
-					"Transaction signature serviceSig must not be null (spending before locktime).");
+					"Transaction signature serverSig must not be null (spending before locktime).");
 		}
-		return createScriptSig(false, userSig, serviceSig);
+		return createScriptSig(false, clientSig, serverSig);
 	}
 
 	/**
 	 * Creates a scriptSig that can be used in spending transactions after the locktime. 
-	 * Only the signature of the user is required.
+	 * Only the signature of the client is required.
 	 * 
-	 * @param userSig signature of the user
+	 * @param clientSig signature of the client
 	 * @return scriptSig
 	 */
-	public Script createScriptSigAfterLockTime(TransactionSignature userSig) {
-		if (userSig == null) {
-			throw new IllegalArgumentException("Transaction signature userSig must not be null.");
+	public Script createScriptSigAfterLockTime(TransactionSignature clientSig) {
+		if (clientSig == null) {
+			throw new IllegalArgumentException("Transaction signature clientSig must not be null.");
 		}
-		return createScriptSig(true, userSig);
+		return createScriptSig(true, clientSig);
 	}
 	
 	private Script createScriptSig(final boolean spendAfterLockTime, final TransactionSignature... signatures) {
@@ -248,7 +262,7 @@ public final class TimeLockedAddress {
 	 * [sig] [sig..] [contract branch = 0|1] [serialized redeemScript]
 	 * 
 	 * @param redeemScriptRaw the redeem script 
-	 * @param spendAfterLockTime true if spending after lock time without service signature.
+	 * @param spendAfterLockTime true if spending after lock time without server signature.
 	 * @param signatures the signatures, order is relevant
 	 * @return scriptSig
 	 */
@@ -281,15 +295,15 @@ public final class TimeLockedAddress {
 		}
 		
 		final TimeLockedAddress other = (TimeLockedAddress) object;
-		return Arrays.equals(userPubKey, other.getUserPubKey())
-			&& Arrays.equals(servicePubKey, other.servicePubKey)
+		return Arrays.equals(clientPubKey, other.getClientPubKey())
+			&& Arrays.equals(serverPubKey, other.serverPubKey)
 			&& lockTime == other.getLockTime()
 			&& Arrays.equals(addressHash, other.getAddressHash());
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(userPubKey, servicePubKey, lockTime, addressHash);
+		return Objects.hash(clientPubKey, serverPubKey, lockTime, addressHash);
 	}
 	
 	@Override
@@ -332,10 +346,10 @@ public final class TimeLockedAddress {
 		sb.append(")\n");
 		
 		
-		sb.append("\tUser Pubkey:\t")
-			.append(Utils.HEX.encode(userPubKey)).append("\n");
-		sb.append("\tService Pubkey:\t")
-			.append(Utils.HEX.encode(servicePubKey)).append("\n");
+		sb.append("\tClient Pubkey:\t")
+			.append(Utils.HEX.encode(clientPubKey)).append("\n");
+		sb.append("\tServer Pubkey:\t")
+			.append(Utils.HEX.encode(serverPubKey)).append("\n");
 		sb.append("\tScript:\t\t")
 			.append(script.toString()).append("\n");
 		sb.append("\tScript Hex:\t")
