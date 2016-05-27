@@ -31,6 +31,7 @@ public class SignTO extends BaseTO<SignTO> {
     private long amountToSpend; //input 
     private String p2shAddressTo; //input
     private List<Pair<byte[],Long>> outpointsCoinPair; //input
+    private long amountChange; // input
     
     private List<TxSig> signatures; //input/output
     
@@ -68,6 +69,15 @@ public class SignTO extends BaseTO<SignTO> {
 
     public String p2shAddressTo() {
         return p2shAddressTo;
+    }
+    
+    public long amountChange() {
+    	return amountChange;
+    }
+    
+    public SignTO amountChange(long amountChange) {
+    	this.amountChange = amountChange;
+    	return this;
     }
     
     public SignTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
