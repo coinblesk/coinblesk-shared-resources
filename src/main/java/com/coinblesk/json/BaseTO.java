@@ -27,7 +27,7 @@ public class BaseTO<T extends BaseTO> {
     private byte[] publicKey; //input
     
     public boolean isInputSet() {
-        return messageSig != null && currentDate > 0;
+        return messageSig != null;
     }
 
     public boolean isOutputSet() {
