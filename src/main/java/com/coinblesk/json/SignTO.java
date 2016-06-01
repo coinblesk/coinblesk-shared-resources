@@ -25,15 +25,14 @@ import java.util.List;
 public class SignTO extends BaseTO<SignTO> {
 
     //choice 1
-    private byte[] transaction; // input
+    private byte[] transaction; //input
     
     //choice 2
-    private long amountToSpend; // input 
-    private long amountChange; // input
-    private String p2shAddressTo; // input
-    private List<Pair<byte[], Long>> outpointsCoinPair; // input
-        
-    private List<TxSig> signatures; // input/output
+    private long amountToSpend; //input 
+    private String p2shAddressTo; //input
+    private List<Pair<byte[],Long>> outpointsCoinPair; //input
+    
+    private List<TxSig> signatures; //input/output
     
     public SignTO transaction(byte[] transaction) {
         this.transaction = transaction;
@@ -69,15 +68,6 @@ public class SignTO extends BaseTO<SignTO> {
 
     public String p2shAddressTo() {
         return p2shAddressTo;
-    }
-    
-    public long amountChange() {
-    	return amountChange;
-    }
-    
-    public SignTO amountChange(long amountChange) {
-    	this.amountChange = amountChange;
-    	return this;
     }
     
     public SignTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
