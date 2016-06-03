@@ -17,8 +17,6 @@ package com.coinblesk.json;
 
 import java.util.List;
 
-import com.coinblesk.util.Pair;
-
 /**
  *
  * @author Andreas Albrecht
@@ -36,7 +34,8 @@ public class SignVerifyTO extends BaseTO<SignVerifyTO> {
    
     private List<TxSig> signatures; // input/output
     
-    private Pair<byte[], TxSig> payeeSig; // input/output, not signed.
+    private byte[] payeePublicKey;
+    private TxSig payeeMessageSig;
     
     public byte[] transaction() {
 	    return transaction;
@@ -83,12 +82,21 @@ public class SignVerifyTO extends BaseTO<SignVerifyTO> {
     	return this;
     }
     
-    public Pair<byte[], TxSig> payeeSig() {
-    	return payeeSig;
+    public TxSig payeeMessageSig() {
+    	return payeeMessageSig;
     }
     
-    public SignVerifyTO payeeSig(Pair<byte[], TxSig> payeeSig) {
-    	this.payeeSig = payeeSig;
+    public SignVerifyTO payeeMessageSig(TxSig payeeMessageSig) {
+    	this.payeeMessageSig = payeeMessageSig;
+    	return this;
+    }
+    
+    public byte[] payeePublicKey() {
+    	return payeePublicKey;
+    }
+    
+    public SignVerifyTO payeePublicKey(byte[] payeePublicKey) {
+    	this.payeePublicKey = payeePublicKey;
     	return this;
     }
 }

@@ -74,8 +74,14 @@ public class SerializeUtils {
         
     }
 
-    public static <K extends BaseTO> K signJSON(final K k, final ECKey ecKey)  {
+    public static <K extends BaseTO<?>> K signJSON(final K k, final ECKey ecKey)  {
         k.messageSig(null);
+        TxSig signature = signJSONRaw(k, ecKey);
+        k.messageSig(signature);
+        return k;
+    }
+    
+	public static <K extends BaseTO<?>> TxSig signJSONRaw(final K k, final ECKey ecKey)  {
         final String json = GSON.toJson(k);
         
         final String canonicalJSON = canonicalizeJSON(json);
@@ -83,8 +89,7 @@ public class SerializeUtils {
   
         LOG.debug("json sign serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
         final ECKey.ECDSASignature sig = ecKey.sign(hash);
-        k.messageSig(new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString()));
-        return k;
+        return new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString());
     }
     
     public static String canonicalizeJSON(final String json) {
@@ -109,19 +114,24 @@ public class SerializeUtils {
         return Sha256Hash.wrap(Sha256Hash.hash(canonicalizeJSON.getBytes()));
     }
 
-    public static <K extends BaseTO> boolean verifyJSONSignature(final K k, final ECKey ecKey) {
-        final TxSig check = k.messageSig();
-        final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(
-        		new BigInteger(check.sigR()), new BigInteger(check.sigS()));
+    public static <K extends BaseTO<?>> boolean verifyJSONSignature(final K k, final ECKey ecKey) {
+    	boolean success = false;
+        final TxSig toCheck = k.messageSig();
         k.messageSig(null);
+        success = verifyJSONSignatureRaw(k, toCheck, ecKey);
+        k.messageSig(toCheck);
+        return success;
+    }
+    
+    public static <K extends BaseTO<?>> boolean verifyJSONSignatureRaw(final K k, final TxSig signature, final ECKey key) {
+        final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(
+        		new BigInteger(signature.sigR()), new BigInteger(signature.sigS()));
         final String json = GSON.toJson(k);
-        k.messageSig(check);
-        
         final String canonicalJSON = canonicalizeJSON(json);
         final Sha256Hash hash = hash(canonicalJSON);
         LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);        
-        return ecKey.verify(hash, sig);
-    }
+        return key.verify(hash, sig);
+    }    
 
     public static boolean verifyTxSignatures(Transaction tx, List<TransactionSignature> sigs,
             Script redeemScript, ECKey serverPubKey) {
