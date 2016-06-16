@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
+    public final static long ONE_BITCOIN_IN_SATOSHI = 100000000L;
     
     public static Transaction createRefundTx(final NetworkParameters params, 
             final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,

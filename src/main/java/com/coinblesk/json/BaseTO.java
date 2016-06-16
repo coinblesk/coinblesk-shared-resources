@@ -20,6 +20,7 @@ package com.coinblesk.json;
  * @author Thomas Bocek
  */
 public class BaseTO<T extends BaseTO> { 
+    private int version = 0;
     private int type = 0; //input/output - always valid
     private String message; //output
     private TxSig messageSig; //input/output
@@ -88,5 +89,12 @@ public class BaseTO<T extends BaseTO> {
         return publicKey;
     }
 
+    public T version(int version) {
+        this.version = version;
+        return (T)this;
+    }
     
+    public int version() {
+        return version;
+    }
 }

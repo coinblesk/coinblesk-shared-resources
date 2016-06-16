@@ -17,17 +17,18 @@ package com.coinblesk.json;
 
 /**
  * @author Andreas Albrecht
+ * @author Thomas Bocek
  */
 public class VersionTO extends BaseTO<VersionTO> {
-	private String version;
-	private boolean isSupported;
+	private String clientVersion; //input
+	private boolean isSupported; //output
 	
-	public String version() {
-		return version;
+	public String clientVersion() {
+		return clientVersion;
 	}
 	
-	public VersionTO version(String version) {
-		this.version = version;
+	public VersionTO clientVersion(String clientVersion) {
+		this.clientVersion = clientVersion;
 		return this;
 	}
 	
