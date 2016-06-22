@@ -22,6 +22,7 @@ package com.coinblesk.json;
 public class UserAccountTO extends BaseTO<UserAccountTO> {
     private String email;
     private String password;
+    private long balance;
     
     public UserAccountTO password(String password) {
         this.password = password;
@@ -39,5 +40,14 @@ public class UserAccountTO extends BaseTO<UserAccountTO> {
     
     public String email() {
         return email;
+    }
+    
+    public UserAccountTO balance(long balance) {
+        this.balance = balance;
+        return this;
+    }
+    
+    public long balance() {
+        return balance;
     } 
 }
