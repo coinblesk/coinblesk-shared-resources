@@ -122,6 +122,8 @@ public class BitcoinUtils {
             Address p2shAddressFrom,
             Address p2shAddressTo) throws CoinbleskException, InsufficientFunds {
 
+    	// TODO: change address/spend from does not make sense for spendAllTx.
+    	
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
         for (TransactionOutput output : outputs) {
