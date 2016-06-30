@@ -90,7 +90,7 @@ public class BitcoinUtils {
         //now make it deterministic
         sortTransactionInputs(tx);
         return createTxOutputs(params, tx, totalAmount, changeAddress, addressTo, 
-                amountToSpend, senderPaysFee, true);
+                amountToSpend, senderPaysFee);
         
     }
 
@@ -116,7 +116,7 @@ public class BitcoinUtils {
         //now make it deterministic
         sortTransactionInputs(tx);
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend, 
-                senderPaysFee, true);
+                senderPaysFee);
     }
 
     public static Transaction createSpendAllTx (
@@ -136,7 +136,7 @@ public class BitcoinUtils {
         sortTransactionInputs(tx);
 
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, 
-                p2shAddressTo, totalAmount, senderPaysFee, false);
+                p2shAddressTo, totalAmount, senderPaysFee);
     }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
@@ -154,46 +154,50 @@ public class BitcoinUtils {
         return tx;
     }
     
-    private static Transaction createTxOutputs (NetworkParameters params, Transaction txOrig, long totalAmount, 
-            Address changeAddress, Address p2shAddressTo, long amountToSpend, boolean senderPaysFee, boolean includeChange) throws CoinbleskException, InsufficientFunds {
-
-        Transaction tx = new Transaction(params,txOrig.bitcoinSerialize());
+    private static Transaction createTxOutputs (final NetworkParameters params, final Transaction tx, 
+            final long totalAmount, final Address changeAddress, final Address p2shAddressTo, 
+            final long amountToSpend, final boolean senderPaysFee) throws CoinbleskException, InsufficientFunds {
+ 
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
 
-        TransactionOutput txOutRecipient = new TransactionOutput(
-        		params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
-        checkMinValue(txOutRecipient);
-        tx.addOutput(txOutRecipient);
-        
-        boolean hasChange = false;
+       
         final long remainingAmount = totalAmount - amountToSpend;
-        TransactionOutput txOutChange
-                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
+        final long feeOneOutput = calcFee(1, tx.getInputs().size());
+        final long feeTwoOutput = calcFee(2, tx.getInputs().size());
         
-        if (includeChange && !txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
+        final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
+        
+        final long fee;
+        
+        TransactionOutput txOutChange = null;
+        if (changeAmount.isPositive() && 
+                !changeAmount.isLessThan((txOutChange = new TransactionOutput(params, tx, changeAmount, changeAddress)).getMinNonDustValue())) {
             tx.addOutput(txOutChange);
-            hasChange = true;
-        } else {
-            LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
-        }
-
-        final long fee = calcFee(tx) - tx.getFee().value;
-        //if we did not include change, then use the remaining amount to reduce the fee
-        
-        if(senderPaysFee && hasChange && fee > 0){
-            txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
-            if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
-                return createTxOutputs(params, txOrig, totalAmount, changeAddress, 
-                        p2shAddressTo, amountToSpend, includeChange, false);
+            fee = feeTwoOutput;
+        } else if(senderPaysFee) {
+            LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
+            if(remainingAmount - feeOneOutput < 0) {
+               throw new CoinbleskException("Value "+changeAmount+" negative, cannot create tx");
             }
+            fee = feeOneOutput;
         } else {
-            // fee <=0 is only the case if no changeaddress is used
-            txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
-            checkMinValue(txOutRecipient);
+            LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
+            fee = feeOneOutput - changeAmount.value;
         }
         
+        if(senderPaysFee) {
+            TransactionOutput txOutRecipient = new TransactionOutput(
+        		params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+            checkMinValue(txOutRecipient);
+            tx.addOutput(txOutRecipient);
+        } else {
+            TransactionOutput txOutRecipient = new TransactionOutput(
+        		params, tx, Coin.valueOf(amountToSpend-fee), p2shAddressTo);
+            checkMinValue(txOutRecipient);
+            tx.addOutput(txOutRecipient);
+        }
         
         //failsafe
         if(tx.getFee().value > 50000) {
@@ -234,6 +238,21 @@ public class BitcoinUtils {
     	int outputs = (nrOutputs > 0) ? nrOutputs : 2;
         int len = 10 + (260 * nrInputs) + (34 * outputs);
         return len * 30; 
+    }
+    
+    public static Transaction sign(NetworkParameters params, Transaction tx, ECKey signKey) {
+        final int len = tx.getInputs().size();
+        //final List<TransactionSignature> signatures = new ArrayList<TransactionSignature>(len);
+        for (int i = 0; i < len; i++) {
+            final TransactionSignature serverSignature = tx.calculateSignature(i, signKey, ScriptBuilder.createOutputScript(signKey.toAddress(params)),
+                    SigHash.ALL, false);
+            LOG.debug("fully sign for input {}({}), {}", i, tx.getInput(i),
+                    serverSignature);
+            final Script refundTransactionInputScript = ScriptBuilder.createInputScript(serverSignature, signKey);
+            tx.getInput(i).setScriptSig(refundTransactionInputScript);
+        }
+        
+        return tx;
     }
 
     public static List<TransactionSignature> partiallySign(Transaction tx, Script redeemScript, ECKey signKey) {
