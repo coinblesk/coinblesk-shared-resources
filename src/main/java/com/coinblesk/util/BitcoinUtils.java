@@ -76,7 +76,7 @@ public class BitcoinUtils {
     
     public static Transaction createTx(NetworkParameters params, 
     		final List<TransactionOutput> outputs, final Address changeAddress, 
-    		Address addressTo, long amountToSpend) 
+    		Address addressTo, long amountToSpend, boolean senderPaysFee) 
             throws CoinbleskException, InsufficientFunds {
         
         final Transaction tx = new Transaction(params);
@@ -89,13 +89,14 @@ public class BitcoinUtils {
         
         //now make it deterministic
         sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, changeAddress, addressTo, amountToSpend);
+        return createTxOutputs(params, tx, totalAmount, changeAddress, addressTo, 
+                amountToSpend, senderPaysFee, true);
         
     }
 
     public static Transaction createTx(NetworkParameters params, 
-    		final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript, Address p2shAddressFrom, 
-    		Address p2shAddressTo, long amountToSpend) 
+    		final List<Pair<TransactionOutPoint, Coin>> outputsToUse, final Script redeemScript, 
+                Address p2shAddressFrom, Address p2shAddressTo, long amountToSpend, boolean senderPaysFee) 
             throws CoinbleskException, InsufficientFunds {
 
         final Transaction tx = new Transaction(params);
@@ -114,13 +115,14 @@ public class BitcoinUtils {
         
         //now make it deterministic
         sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend);
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend, 
+                senderPaysFee, true);
     }
 
     public static Transaction createSpendAllTx (
             NetworkParameters params, List<TransactionOutput> outputs,
-            Address p2shAddressFrom,
-            Address p2shAddressTo) throws CoinbleskException, InsufficientFunds {
+            Address p2shAddressFrom, Address p2shAddressTo, boolean senderPaysFee) 
+            throws CoinbleskException, InsufficientFunds {
 
     	// TODO: change address/spend from does not make sense for spendAllTx.
     	
@@ -133,7 +135,8 @@ public class BitcoinUtils {
         //now make it deterministic
         sortTransactionInputs(tx);
 
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, totalAmount);
+        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, 
+                p2shAddressTo, totalAmount, senderPaysFee, true);
     }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
@@ -152,49 +155,73 @@ public class BitcoinUtils {
     }
     
     private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
-            Address changeAddress, Address p2shAddressTo, long amountToSpend) throws CoinbleskException, InsufficientFunds {
+            Address changeAddress, Address p2shAddressTo, long amountToSpend, boolean senderPaysFee, boolean includeChange) throws CoinbleskException, InsufficientFunds {
 
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
 
-        final long remainingAmount = totalAmount - amountToSpend;
         TransactionOutput txOutRecipient = new TransactionOutput(
         		params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
-        if (!txOutRecipient.getValue().isLessThan(txOutRecipient.getMinNonDustValue())) {
-            tx.addOutput(txOutRecipient);
-        } else {
-            throw new CoinbleskException("Value too small, cannot create tx");
-        }
-
+        checkMinValue(txOutRecipient);
+        tx.addOutput(txOutRecipient);
+        
         boolean hasChange = false;
+        final long remainingAmount = totalAmount - amountToSpend;
+        long unusedAmount = remainingAmount;
         TransactionOutput txOutChange
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
-        if (!txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
+        
+        if (includeChange && !txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
             tx.addOutput(txOutChange);
             hasChange = true;
+            unusedAmount = 0;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
 
         final int fee = calcFee(tx);
-        if(hasChange){
-        	txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
-        } else {
-        	txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
+        //if we did not include change, then use the remaining amount to reduce the fee
+        final long fee2 = fee - unusedAmount;
+        if(fee2 > 0) {
+            if(senderPaysFee || hasChange){
+                txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee2)));
+                if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
+                    return createTxOutputs(params, tx, totalAmount, changeAddress, 
+                            p2shAddressTo, amountToSpend, includeChange, false);
+                }
+            } else {
+                txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee2)));
+                checkMinValue(txOutRecipient);
+            }
+        }
+        
+        //failsafe
+        if(unusedAmount > 50000) {
+            throw new CoinbleskException("Failsafe: fees are large: "+unusedAmount);
         }
         
         try {
-        	tx.verify();
+            tx.verify();
         } catch (VerificationException ve) {
-        	LOG.warn("Tx verification failed: ", ve);
-        	throw new CoinbleskException("Could not create transaction: " + ve.getMessage());
+            LOG.warn("Tx verification failed: ", ve);
+            throw new CoinbleskException("Could not create transaction: " + ve.getMessage());
         }
         
         return tx;
     }
+    
+    private static void checkMinValue(TransactionOutput txOut) throws CoinbleskException {
+        if (txOut.getValue().isLessThan(txOut.getMinNonDustValue())) {
+            throw new CoinbleskException("Value "+txOut.getValue()+" too small, cannot create tx");
+        }
+    }
 
     public static int calcFee(Transaction tx) {
+        return calcFee(tx.getOutputs().size(), tx.getInputs().size());
+    }
+    
+    public static int calcFee(int nrOutputs, int nrInputs) {
         // http://bitcoinexchangerate.org/test/fees
         // https://bitcoinfees.21.co/
         // http://bitcoinfees.com/
@@ -205,8 +232,8 @@ public class BitcoinUtils {
         //empty tx is 10 bytes
     	
     	// assume 2 outputs if none present
-    	int outputs = (tx.getOutputs().size() > 0) ? tx.getOutputs().size() : 2;
-        int len = 10 + (260 * tx.getInputs().size()) + (34 * outputs);
+    	int outputs = (nrOutputs > 0) ? nrOutputs : 2;
+        int len = 10 + (260 * nrInputs) + (34 * outputs);
         return len * 30; 
     }
 
