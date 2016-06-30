@@ -138,7 +138,7 @@ public class BitcoinUtils {
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
             Address p2shAddressTo) throws CoinbleskException, InsufficientFunds {
-        final int fee = calcFee(tx);
+        final long fee = calcFee(tx);
         LOG.debug("adding tx fee in satoshis {}", fee);
         final long remainingAmount = totalAmount - fee;
         TransactionOutput transactionOutputRecipient
@@ -168,21 +168,31 @@ public class BitcoinUtils {
         }
 
         boolean hasChange = false;
-        TransactionOutput txOutChange
-                = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
+        TransactionOutput txOutChange = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
         if (!txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
-            tx.addOutput(txOutChange);
-            hasChange = true;
+        	Transaction tmpTx = new Transaction(params, tx.bitcoinSerialize());
+        	tmpTx.addOutput(txOutChange.duplicateDetached());      
+            // check whether remaining amount covers fee with change output (2 outputs)
+            long feeWithChange = calcFee(tmpTx);
+            long change = remainingAmount - feeWithChange;
+        	if (change > 0 && change > txOutChange.getMinNonDustValue().value) {        		
+        		tx.addOutput(txOutChange);
+        		hasChange = true;
+        	}
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
-
-        final int fee = calcFee(tx);
-        if(hasChange){
-        	txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
+        
+        // fee: (calculated fee due to tx size) minus (current fee of tx, e.g. due to dust / missing change)
+        final long fee = calcFee(tx) - tx.getFee().value;
+        final TransactionOutput txOutSubtractFee;
+        if (hasChange) {
+        	txOutSubtractFee = txOutChange;
         } else {
-        	txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
+        	txOutSubtractFee = txOutRecipient;
         }
+        // subtract fee:
+        txOutSubtractFee.setValue(txOutSubtractFee.getValue().subtract(Coin.valueOf(fee)));
         
         try {
         	tx.verify();
@@ -194,7 +204,7 @@ public class BitcoinUtils {
         return tx;
     }
 
-    public static int calcFee(Transaction tx) {
+    public static long calcFee(Transaction tx) {
         // http://bitcoinexchangerate.org/test/fees
         // https://bitcoinfees.21.co/
         // http://bitcoinfees.com/
@@ -206,7 +216,7 @@ public class BitcoinUtils {
     	
     	// assume 2 outputs if none present
     	int outputs = (tx.getOutputs().size() > 0) ? tx.getOutputs().size() : 2;
-        int len = 10 + (260 * tx.getInputs().size()) + (34 * outputs);
+        long len = 10 + (260 * tx.getInputs().size()) + (34 * outputs);
         return len * 30; 
     }
 
@@ -304,7 +314,7 @@ public class BitcoinUtils {
         //now make it deterministic
         sortTransactionInputs(tx);
       
-        final int fee = calcFee(tx);
+        final long fee = calcFee(tx);
         final long changeAmount = totalAmount - amountToSpend - fee;
         LOG.debug("Tx - totalAmount={}, amountToSpend={}, fee={}, changeAmount={}", 
         		totalAmount, amountToSpend, fee, changeAmount);
