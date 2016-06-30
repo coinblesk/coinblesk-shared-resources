@@ -136,7 +136,7 @@ public class BitcoinUtils {
         sortTransactionInputs(tx);
 
         return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, 
-                p2shAddressTo, totalAmount, senderPaysFee, true);
+                p2shAddressTo, totalAmount, senderPaysFee, false);
     }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
@@ -154,9 +154,10 @@ public class BitcoinUtils {
         return tx;
     }
     
-    private static Transaction createTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
+    private static Transaction createTxOutputs (NetworkParameters params, Transaction txOrig, long totalAmount, 
             Address changeAddress, Address p2shAddressTo, long amountToSpend, boolean senderPaysFee, boolean includeChange) throws CoinbleskException, InsufficientFunds {
 
+        Transaction tx = new Transaction(params,txOrig.bitcoinSerialize());
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
@@ -178,24 +179,25 @@ public class BitcoinUtils {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
 
-        final int fee = calcFee(tx) - tx.getFee();
+        final long fee = calcFee(tx) - tx.getFee().value;
         //if we did not include change, then use the remaining amount to reduce the fee
-        if(fee > 0) {
-            if(senderPaysFee && hasChange){
-                txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
-                if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
-                    return createTxOutputs(params, tx, totalAmount, changeAddress, 
-                            p2shAddressTo, amountToSpend, includeChange, false);
-                }
-            } else {
-                txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
-                checkMinValue(txOutRecipient);
+        
+        if(senderPaysFee && hasChange && fee > 0){
+            txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
+            if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
+                return createTxOutputs(params, txOrig, totalAmount, changeAddress, 
+                        p2shAddressTo, amountToSpend, includeChange, false);
             }
+        } else {
+            // fee <=0 is only the case if no changeaddress is used
+            txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
+            checkMinValue(txOutRecipient);
         }
         
+        
         //failsafe
-        if(tx.getFee() > 50000) {
-            throw new CoinbleskException("Failsafe: fees are large: "+unusedAmount);
+        if(tx.getFee().value > 50000) {
+            throw new CoinbleskException("Failsafe: fees are large: "+tx.getFee().value);
         }
         
         try {
