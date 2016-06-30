@@ -181,7 +181,7 @@ public class BitcoinUtils {
         final int fee = calcFee(tx) - tx.getFee();
         //if we did not include change, then use the remaining amount to reduce the fee
         if(fee > 0) {
-            if(senderPaysFee || hasChange){
+            if(senderPaysFee && hasChange){
                 txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
                 if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
                     return createTxOutputs(params, tx, totalAmount, changeAddress, 
