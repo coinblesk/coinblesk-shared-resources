@@ -168,36 +168,33 @@ public class BitcoinUtils {
         
         boolean hasChange = false;
         final long remainingAmount = totalAmount - amountToSpend;
-        long unusedAmount = remainingAmount;
         TransactionOutput txOutChange
                 = new TransactionOutput(params, tx, Coin.valueOf(remainingAmount), changeAddress);
         
         if (includeChange && !txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
             tx.addOutput(txOutChange);
             hasChange = true;
-            unusedAmount = 0;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", remainingAmount);
         }
 
-        final int fee = calcFee(tx);
+        final int fee = calcFee(tx) - tx.getFee();
         //if we did not include change, then use the remaining amount to reduce the fee
-        final long fee2 = fee - unusedAmount;
-        if(fee2 > 0) {
+        if(fee > 0) {
             if(senderPaysFee || hasChange){
-                txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee2)));
+                txOutChange.setValue(txOutChange.getValue().subtract(Coin.valueOf(fee)));
                 if (txOutChange.getValue().isLessThan(txOutChange.getMinNonDustValue())) {
                     return createTxOutputs(params, tx, totalAmount, changeAddress, 
                             p2shAddressTo, amountToSpend, includeChange, false);
                 }
             } else {
-                txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee2)));
+                txOutRecipient.setValue(txOutRecipient.getValue().subtract(Coin.valueOf(fee)));
                 checkMinValue(txOutRecipient);
             }
         }
         
         //failsafe
-        if(unusedAmount > 50000) {
+        if(tx.getFee() > 50000) {
             throw new CoinbleskException("Failsafe: fees are large: "+unusedAmount);
         }
         

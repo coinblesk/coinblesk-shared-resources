@@ -21,4 +21,12 @@ package com.coinblesk.util;
  */
 public class InsufficientFunds extends Exception {
 	private static final long serialVersionUID = -8737691439461100798L;
+	
+	public InsufficientFunds() {
+		super("Insufficient funds.");
+	}
+	
+	public InsufficientFunds(String msg) {
+		super(msg);
+	}
 }
