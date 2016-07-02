@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
-    public final static long ONE_BITCOIN_IN_SATOSHI = 100000000L;
+    public final static long ONE_BITCOIN_IN_SATOSHI = Coin.COIN.value;
     
     public static Transaction createRefundTx(final NetworkParameters params, 
             final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
@@ -318,15 +318,6 @@ public class BitcoinUtils {
         }
         return true;
     }
-
-    
-    private static boolean isOurP2SHAddress(NetworkParameters params, TransactionOutput to, Address ourAddress) {
-        final Address a = to.getAddressFromP2SH(params);
-        if (a != null && a.equals(ourAddress)) {
-            return true;
-        }
-        return false;
-    }
     
     private static boolean isOurP2SHAddress(NetworkParameters params, 
 										TransactionOutput to, Collection<Address> ourAddresses) {
@@ -437,7 +428,7 @@ public class BitcoinUtils {
 
     /**
      * Verifies the transaction an its inputs.
-     * Works only if Tx is connected (required parent of outputs)
+     * Works only if Tx is connected (required parent of outputs). Also checks the signature
      * 
      * @param tx
      */
@@ -505,20 +496,9 @@ public class BitcoinUtils {
         }
 
     }
-
-    private static void sortTransactionOutputs(Transaction tx) {
-        //now make it deterministic
-        List<TransactionOutput> sorted = sortOutputs(tx.getOutputs());
-        tx.clearOutputs();
-        for (TransactionOutput transactionOutput : sorted) {
-            tx.addOutput(transactionOutput);
-        }
-
-    }
-    
-    
+   
     //we are using our own comparator as the one provided by guava crashes android on some devices
-    //Nexus 5 with 6.0.1 crashes with SIGBUS in labart for the getLong operation. To use the pure
+    //Nexus 5 with 6.0.1 crashes with SIGBUS in libart for the getLong operation. To use the pure
     //java comparator, we took the one from guava and set it explicitely. This hack may be solved in
     //future versions of guava
 
