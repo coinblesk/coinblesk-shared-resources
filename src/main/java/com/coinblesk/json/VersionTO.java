@@ -15,12 +15,15 @@
  */
 package com.coinblesk.json;
 
+import com.coinblesk.bitcoin.BitcoinNet;
+
 /**
  * @author Andreas Albrecht
  * @author Thomas Bocek
  */
 public class VersionTO extends BaseTO<VersionTO> {
 	private String clientVersion; //input
+	private BitcoinNet bitcoinNet; // input/output
 	private boolean isSupported; //output
 	
 	public String clientVersion() {
@@ -38,6 +41,15 @@ public class VersionTO extends BaseTO<VersionTO> {
 	
 	public VersionTO setSupported(boolean isSupported) {
 		this.isSupported = isSupported;
+		return this;
+	}
+	
+	public BitcoinNet bitcoinNet() {
+		return bitcoinNet;
+	}
+	
+	public VersionTO bitcoinNet(BitcoinNet bitcoinNet) {
+		this.bitcoinNet = bitcoinNet;
 		return this;
 	}
 }
