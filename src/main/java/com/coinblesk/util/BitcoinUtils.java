@@ -170,26 +170,30 @@ public class BitcoinUtils {
         final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
         
         final long fee;
+        final long remaining;
         
         TransactionOutput txOutChange = null;
         if (changeAmount.isPositive() && 
                 !changeAmount.isLessThan((txOutChange = new TransactionOutput(params, tx, changeAmount, changeAddress)).getMinNonDustValue())) {
             tx.addOutput(txOutChange);
             fee = feeTwoOutput;
+            remaining = 0;
         } else if(senderPaysFee) {
             LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
             if(remainingAmount - feeOneOutput < 0) {
                throw new CoinbleskException("Value "+changeAmount+" negative, cannot create tx");
             }
             fee = feeOneOutput;
+            remaining = remainingAmount - feeOneOutput;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
             fee = feeOneOutput - changeAmount.value;
+            remaining = 0;
         }
         
         if(senderPaysFee) {
             TransactionOutput txOutRecipient = new TransactionOutput(
-        		params, tx, Coin.valueOf(amountToSpend), p2shAddressTo);
+        		params, tx, Coin.valueOf(amountToSpend + remaining), p2shAddressTo);
             checkMinValue(txOutRecipient);
             tx.addOutput(txOutRecipient);
         } else {
