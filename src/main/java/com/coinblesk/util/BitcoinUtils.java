@@ -204,8 +204,9 @@ public class BitcoinUtils {
         }
         
         //failsafe
-        if(tx.getFee().value > 50000) {
-            throw new CoinbleskException("Failsafe: fees are large: "+tx.getFee().value);
+        if(tx.getFee().value > tx.unsafeBitcoinSerialize().length * 750) {
+            throw new CoinbleskException("Failsafe: fees are large: "+tx.getFee().value 
+                    + " vs. "+(tx.unsafeBitcoinSerialize().length * 100));
         }
         
         sortTransactionOutputs(tx);
