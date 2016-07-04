@@ -208,6 +208,8 @@ public class BitcoinUtils {
             throw new CoinbleskException("Failsafe: fees are large: "+tx.getFee().value);
         }
         
+        sortTransactionOutputs(tx);
+        
         try {
             tx.verify();
         } catch (VerificationException ve) {
@@ -494,7 +496,14 @@ public class BitcoinUtils {
         for (TransactionInput transactionInput : sorted) {
             tx.addInput(transactionInput);
         }
-
+    }
+    
+    public static void sortTransactionOutputs(Transaction tx) {
+    	List<TransactionOutput> sortedOutputs = sortOutputs(tx.getOutputs());
+    	tx.clearOutputs();
+    	for (TransactionOutput to : sortedOutputs) {
+    		tx.addOutput(to);
+    	}
     }
    
     //we are using our own comparator as the one provided by guava crashes android on some devices
