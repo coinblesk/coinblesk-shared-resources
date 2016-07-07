@@ -41,8 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Thomas Bocek
+ * @author Andreas Albrecht
  */
 public class BitcoinUtils {
 
@@ -119,24 +119,34 @@ public class BitcoinUtils {
                 senderPaysFee);
     }
 
-    public static Transaction createSpendAllTx (
-            NetworkParameters params, List<TransactionOutput> outputs,
-            Address p2shAddressFrom, Address p2shAddressTo, boolean senderPaysFee) 
-            throws CoinbleskException, InsufficientFunds {
-
-    	// TODO: change address/spend from does not make sense for spendAllTx.
-    	
+    public static Transaction createSpendAllTx (NetworkParameters params,
+    											List<TransactionOutput> outputs, Address addressTo) 
+    											throws CoinbleskException, InsufficientFunds {
         final Transaction tx = new Transaction(params);
+        final long feeOneOutput = calcFee(1, tx.getInputs().size());
+        
         long totalAmount = 0;
         for (TransactionOutput output : outputs) {
             tx.addInput(output);
-            totalAmount += output.getValue().getValue();
+            totalAmount += output.getValue().value;
         }
         //now make it deterministic
         sortTransactionInputs(tx);
-
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, 
-                p2shAddressTo, totalAmount, senderPaysFee);
+        
+        Coin amountToSend = Coin.valueOf(totalAmount - feeOneOutput);
+        if (!amountToSend.isPositive()) {
+        	throw new CoinbleskException("Amount ("+totalAmount+") too small (does not cover fee of "+feeOneOutput+")");
+        }
+        
+        TransactionOutput txOutRecipient = new TransactionOutput(params, tx, amountToSend, addressTo);
+        checkMinValue(txOutRecipient);
+        tx.addOutput(txOutRecipient);
+        
+        checkFee(tx);
+        
+        verifyTxSimple(tx);
+        
+        return tx;
     }
     
     private static Transaction createRefundTxOutputs (NetworkParameters params, Transaction tx, long totalAmount, 
@@ -157,7 +167,7 @@ public class BitcoinUtils {
     private static Transaction createTxOutputs (final NetworkParameters params, final Transaction tx, 
             final long totalAmount, final Address changeAddress, final Address p2shAddressTo, 
             final long amountToSpend, final boolean senderPaysFee) throws CoinbleskException, InsufficientFunds {
- 
+
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
@@ -170,58 +180,58 @@ public class BitcoinUtils {
         final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
         
         final long fee;
-        final long remaining;
+        final long remainingDust;
         
         TransactionOutput txOutChange = null;
         if (changeAmount.isPositive() && 
                 !changeAmount.isLessThan((txOutChange = new TransactionOutput(params, tx, changeAmount, changeAddress)).getMinNonDustValue())) {
             tx.addOutput(txOutChange);
             fee = feeTwoOutput;
-            remaining = 0;
+            remainingDust = 0;
         } else if(senderPaysFee) {
             LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
             if(remainingAmount - feeOneOutput < 0) {
                throw new CoinbleskException("Value "+changeAmount+" negative, cannot create tx");
             }
             fee = feeOneOutput;
-            remaining = remainingAmount - feeOneOutput;
+            remainingDust = remainingAmount - feeOneOutput;
         } else {
             LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
             fee = feeOneOutput - changeAmount.value;
-            remaining = 0;
+            remainingDust = 0;
         }
         
+        Coin amountToRecipient;
         if(senderPaysFee) {
-            TransactionOutput txOutRecipient = new TransactionOutput(
-        		params, tx, Coin.valueOf(amountToSpend + remaining), p2shAddressTo);
-            checkMinValue(txOutRecipient);
-            tx.addOutput(txOutRecipient);
+        	amountToRecipient = Coin.valueOf(amountToSpend + remainingDust);
         } else {
-            TransactionOutput txOutRecipient = new TransactionOutput(
-        		params, tx, Coin.valueOf(amountToSpend-fee), p2shAddressTo);
-            checkMinValue(txOutRecipient);
-            tx.addOutput(txOutRecipient);
+        	amountToRecipient = Coin.valueOf(amountToSpend-fee);
+        	if (!amountToRecipient.isPositive()) {
+        		throw new CoinbleskException("Amount to small to cover fees (output: " + amountToRecipient.value);
+        	}
         }
+        TransactionOutput txOutRecipient = new TransactionOutput(params, tx, amountToRecipient, p2shAddressTo);
+        checkMinValue(txOutRecipient);
+        tx.addOutput(txOutRecipient);
         
-        //failsafe
-        if(tx.getFee().value > tx.unsafeBitcoinSerialize().length * 750) {
-            throw new CoinbleskException("Failsafe: fees are large: "+tx.getFee().value 
-                    + " vs. "+(tx.unsafeBitcoinSerialize().length * 100));
-        }
+        //failsafe if fees large
+        checkFee(tx);
         
         sortTransactionOutputs(tx);
         
-        try {
-            tx.verify();
-        } catch (VerificationException ve) {
-            LOG.warn("Tx verification failed: ", ve);
-            throw new CoinbleskException("Could not create transaction: " + ve.getMessage());
-        }
+        verifyTxSimple(tx);
         
         return tx;
     }
     
-    private static void checkMinValue(TransactionOutput txOut) throws CoinbleskException {
+    private static void checkFee(Transaction tx) throws CoinbleskException {
+		int maxFee = tx.unsafeBitcoinSerialize().length * 750;
+        if(tx.getFee().value > maxFee) {
+            throw new CoinbleskException("Failsafe: fees are large: " + tx.getFee().value + " vs. " + maxFee);
+        }		
+	}
+
+	private static void checkMinValue(TransactionOutput txOut) throws CoinbleskException {
         if (txOut.getValue().isLessThan(txOut.getMinNonDustValue())) {
             throw new CoinbleskException("Value "+txOut.getValue()+" too small, cannot create tx");
         }
@@ -385,7 +395,6 @@ public class BitcoinUtils {
     										final Map<String, Long> outputTimeLocks, 
 											final long lockTimeThreshold) {
     	final String tag = "setFlagsOfCLTVInputs";
-    	final NetworkParameters params = tx.getParams();
 		final List<TransactionInput> inputs = tx.getInputs();
 		long maxLockTime = 0L;
 		
@@ -430,7 +439,7 @@ public class BitcoinUtils {
     }
 
     /**
-     * Verifies the transaction an its inputs.
+     * Verifies the transaction and all its inputs.
      * Works only if Tx is connected (required parent of outputs). Also checks the signature
      * 
      * @param tx
@@ -444,6 +453,20 @@ public class BitcoinUtils {
 		} catch (VerificationException e) {
 			throw new CoinbleskException("Transaction verification failed: " + e.getMessage(), e);
 		}
+	}
+	
+	/**
+     * Checks the transaction contents for sanity, but WITHOUT its inputs.
+     * 
+     * @param tx
+     */
+	public static void verifyTxSimple(Transaction tx) throws CoinbleskException {
+		try {
+            tx.verify();
+        } catch (VerificationException ve) {
+            LOG.warn("Tx verification failed: ", ve);
+            throw new CoinbleskException("Could not process transaction: " + ve.getMessage());
+        }
 	}
     
     public static List<TransactionInput> sortInputs(final List<TransactionInput> unsorted) {
