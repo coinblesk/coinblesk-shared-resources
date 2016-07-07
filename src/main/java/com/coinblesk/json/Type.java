@@ -23,6 +23,7 @@ import java.util.Map;
  * @author Thomas Bocek
  */
 public enum Type {
+		SUCCESS_INSTANT(6),
 		SUCCESS_BUT_ADDRESS_ALREADY_EXISTS(5),
         SUCCESS_BUT_KEY_ALREADY_EXISTS(4),
         SUCCESS_BUT_NO_INSTANT_PAYMENT(3),
