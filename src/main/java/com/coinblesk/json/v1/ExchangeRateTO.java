@@ -13,14 +13,33 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 /**
  *
  * @author Thomas Bocek
  */
-public class KeyTO extends BaseTO<KeyTO> {
+public class ExchangeRateTO extends BaseTO<KeyTO> {
 
-    //used from BaseTO
-    //private byte[] serverPublicKey; //output
+    private String name;
+    private String rate;
+
+    public String name() {
+        return name;
+    }
+
+    public ExchangeRateTO name(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public String rate() {
+        return rate;
+    }
+
+    public ExchangeRateTO rate(String rate) {
+        this.rate = rate;
+        return this;
+    }
+
 }

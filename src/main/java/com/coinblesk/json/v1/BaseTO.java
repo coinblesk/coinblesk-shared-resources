@@ -13,14 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 /**
  *
  * @author Thomas Bocek
  */
 public class BaseTO<T extends BaseTO> { 
-    private int version = 0;
+    
     private int type = 0; //input/output - always valid
     private String message; //output
     private TxSig messageSig; //input/output
@@ -87,14 +87,5 @@ public class BaseTO<T extends BaseTO> {
 
     public byte[] publicKey() {
         return publicKey;
-    }
-
-    public T version(int version) {
-        this.version = version;
-        return (T)this;
-    }
-    
-    public int version() {
-        return version;
     }
 }

@@ -13,22 +13,41 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 /**
  *
  * @author Thomas Bocek
  */
-public class BalanceTO extends BaseTO<BalanceTO> {
-
-    private long balance; //output
-
-    public BalanceTO balance(long balance) {
+public class UserAccountTO extends BaseTO<UserAccountTO> {
+    private String email;
+    private String password;
+    private long balance;
+    
+    public UserAccountTO password(String password) {
+        this.password = password;
+        return this;
+    }
+    
+    public String password() {
+        return password;
+    }
+    
+    public UserAccountTO email(String email) {
+        this.email = email;
+        return this;
+    }
+    
+    public String email() {
+        return email;
+    }
+    
+    public UserAccountTO balance(long balance) {
         this.balance = balance;
         return this;
     }
-
+    
     public long balance() {
         return balance;
-    }
+    } 
 }

@@ -1,4 +1,4 @@
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 import com.coinblesk.bitcoin.TimeLockedAddress;
 

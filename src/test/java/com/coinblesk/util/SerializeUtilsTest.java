@@ -1,8 +1,8 @@
 package com.coinblesk.util;
 
-import com.coinblesk.json.SignTO;
-import com.coinblesk.json.TxSig;
-import com.coinblesk.json.VerifyTO;
+import com.coinblesk.json.v1.SignTO;
+import com.coinblesk.json.v1.TxSig;
+import com.coinblesk.json.v1.VerifyTO;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;

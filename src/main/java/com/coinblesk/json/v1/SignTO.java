@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 import com.coinblesk.util.Pair;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author Thomas Bocek
  */
-public class VerifyTO extends BaseTO<VerifyTO> {
+public class SignTO extends BaseTO<SignTO> {
 
     //choice 1
     private byte[] transaction; //input
@@ -32,13 +32,9 @@ public class VerifyTO extends BaseTO<VerifyTO> {
     private String p2shAddressTo; //input
     private List<Pair<byte[],Long>> outpointsCoinPair; //input
     
-    private List<TxSig> clientSignatures; //input
-    private List<TxSig> serverSignatures; //input
+    private List<TxSig> signatures; //input/output
     
-    //used from above
-    //private byte[] transaction; //output
-    
-    public VerifyTO transaction(byte[] transaction) {
+    public SignTO transaction(byte[] transaction) {
         this.transaction = transaction;
         return this;
     }
@@ -47,25 +43,16 @@ public class VerifyTO extends BaseTO<VerifyTO> {
         return transaction;
     }
     
-    public VerifyTO serverSignatures(List<TxSig> serverSignatures) {
-        this.serverSignatures = serverSignatures;
+    public SignTO signatures(List<TxSig> serverSignatures) {
+        this.signatures = serverSignatures;
         return this;
     }
     
-    public List<TxSig> serverSignatures() {
-        return serverSignatures;
+    public List<TxSig> signatures() {
+        return signatures;
     }
     
-    public VerifyTO clientSignatures(List<TxSig> clientSignatures) {
-        this.clientSignatures = clientSignatures;
-        return this;
-    }
-    
-    public List<TxSig> clientSignatures() {
-        return clientSignatures;
-    }
-    
-    public VerifyTO amountToSpend(long amountToSpend) {
+    public SignTO amountToSpend(long amountToSpend) {
         this.amountToSpend = amountToSpend;
         return this;
     }
@@ -74,7 +61,7 @@ public class VerifyTO extends BaseTO<VerifyTO> {
         return amountToSpend;
     }
     
-    public VerifyTO p2shAddressTo(String p2shAddressTo) {
+    public SignTO p2shAddressTo(String p2shAddressTo) {
         this.p2shAddressTo = p2shAddressTo;
         return this;
     }
@@ -83,7 +70,7 @@ public class VerifyTO extends BaseTO<VerifyTO> {
         return p2shAddressTo;
     }
     
-    public VerifyTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
+    public SignTO outpointsCoinPair(List<Pair<byte[],Long>> outpointsCoinPair) {
         this.outpointsCoinPair = outpointsCoinPair;
         return this;
     }

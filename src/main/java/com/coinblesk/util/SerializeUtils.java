@@ -15,8 +15,8 @@
  */
 package com.coinblesk.util;
 
-import com.coinblesk.json.BaseTO;
-import com.coinblesk.json.TxSig;
+import com.coinblesk.json.v1.BaseTO;
+import com.coinblesk.json.v1.TxSig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;

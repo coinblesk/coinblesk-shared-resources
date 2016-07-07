@@ -13,32 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 /**
  *
  * @author Thomas Bocek
  */
-public class TxSig {
+public class KeyTO extends BaseTO<KeyTO> {
 
-    private String sigR;
-    private String sigS;
-
-    public TxSig sigR(String sigR) {
-        this.sigR = sigR;
-        return this;
-    }
-
-    public String sigR() {
-        return sigR;
-    }
-
-    public TxSig sigS(String sigS) {
-        this.sigS = sigS;
-        return this;
-    }
-
-    public String sigS() {
-        return sigS;
-    }
+    //used from BaseTO
+    //private byte[] serverPublicKey; //output
 }

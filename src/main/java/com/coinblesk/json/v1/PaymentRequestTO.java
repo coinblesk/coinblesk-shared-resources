@@ -1,9 +1,10 @@
-package com.coinblesk.json;
+package com.coinblesk.json.v1;
 
 public class PaymentRequestTO extends BaseTO<PaymentRequestTO> {
 	
 	private String address;
 	private long amount;
+        private int version = 0;
 
 	public String address() {
 		return address;
@@ -22,5 +23,13 @@ public class PaymentRequestTO extends BaseTO<PaymentRequestTO> {
 		this.amount = amount;
 		return this;
 	}
+        public PaymentRequestTO version(int version) {
+                this.version = version;
+        return this;
+        }
+    
+        public int version() {
+                return version;
+        }
 	
 }
