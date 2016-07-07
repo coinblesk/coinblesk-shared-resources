@@ -1,11 +1,13 @@
 package com.coinblesk.util;
 
+import java.util.ArrayList;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bitcoinj.core.Address;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
@@ -13,7 +15,10 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.UnitTestParams;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.wallet.RedeemData;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -192,13 +197,13 @@ public class BitcoinUtilsTest {
         ECKey addressTo = new ECKey();
         Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, addressTo);
         Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
-                addressTo.toAddress(params), Coin.FIFTY_COINS.value - 10000, true);
+                addressTo.toAddress(params), Coin.FIFTY_COINS.value - 6000, true);
         tx.verify();
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
         Assert.assertEquals(1, tx.getOutputs().size());
-        Assert.assertEquals(9120, tx.getFee().value);
-        Assert.assertEquals(Coin.FIFTY_COINS.value - 9120, tx.getOutput(0).getValue().value);
+        Assert.assertEquals(5760, tx.getFee().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 5760, tx.getOutput(0).getValue().value);
     }
     
     @Test
@@ -213,8 +218,8 @@ public class BitcoinUtilsTest {
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
         Assert.assertEquals(2, tx.getOutputs().size());
-        Assert.assertEquals(10140, tx.getFee().value);
-        Assert.assertEquals(20000 - 10140, tx.getOutput(0).getValue().value);
+        Assert.assertEquals(6780, tx.getFee().value);
+        Assert.assertEquals(20000 - 6780, tx.getOutput(0).getValue().value);
         Assert.assertEquals(Coin.FIFTY_COINS.value - 20000, tx.getOutput(1).getValue().value);
     }
     
@@ -230,8 +235,8 @@ public class BitcoinUtilsTest {
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
         Assert.assertEquals(1, tx.getOutputs().size());
-        Assert.assertEquals(9120, tx.getFee().value);
-        Assert.assertEquals(Coin.FIFTY_COINS.value - 9120, tx.getOutput(0).getValue().value);
+        Assert.assertEquals(5760, tx.getFee().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 5760, tx.getOutput(0).getValue().value);
     }
     
     @Test
@@ -246,8 +251,8 @@ public class BitcoinUtilsTest {
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
         Assert.assertEquals(1, tx.getOutputs().size());
-        Assert.assertEquals(9120, tx.getFee().value);
-        Assert.assertEquals(Coin.FIFTY_COINS.value - 9120, tx.getOutput(0).getValue().value);
+        Assert.assertEquals(5760, tx.getFee().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 5760, tx.getOutput(0).getValue().value);
     }
     
     @Test
@@ -262,8 +267,135 @@ public class BitcoinUtilsTest {
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
         Assert.assertEquals(2, tx.getOutputs().size());
-        Assert.assertEquals(10140, tx.getFee().value);
+        Assert.assertEquals(6780, tx.getFee().value);
         Assert.assertEquals(20000, tx.getOutput(0).getValue().value);
-        Assert.assertEquals(Coin.FIFTY_COINS.value - 20000 - 10140, tx.getOutput(1).getValue().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 20000 - 6780, tx.getOutput(1).getValue().value);
+    }
+    
+    @Test
+    public void testFeeRegular() throws CoinbleskException, InsufficientFunds {
+        NetworkParameters params = UnitTestParams.get();
+        ECKey changeAddress = new ECKey();
+        ECKey addressTo = new ECKey();
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, addressTo);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
+                addressTo.toAddress(params), Coin.COIN.value, false);
+        tx = BitcoinUtils.sign(params, tx, addressTo);
+        
+        System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("estimate:" + BitcoinUtils.estimateSize(2, 0, 1, 0));
+        System.out.println("input len:"+tx.getInput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 1:"+tx.getOutput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 2:"+tx.getOutput(1).unsafeBitcoinSerialize().length);
+        
+        Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(2, 0, 1, 0)) < 2);
+    }
+    
+    @Test
+    public void testFeeMultiSigOutput() throws CoinbleskException, InsufficientFunds {
+        NetworkParameters params = UnitTestParams.get();
+        ECKey changeAddress = new ECKey();
+        ECKey ecKey = new ECKey();
+        ECKey ecKeyServer = new ECKey();
+        List<ECKey> list = new ArrayList<ECKey>();
+        list.add(ecKey);
+        list.add(ecKeyServer);
+        Script p2shScript = BitcoinUtils.createP2SHOutputScript(2, list);
+        Address p2shAddress = p2shScript.getToAddress(params);
+        
+        ECKey funding = new ECKey();
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, funding);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
+                p2shAddress, Coin.COIN.value, false);
+        tx = BitcoinUtils.sign(params, tx, funding);
+        
+        System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("estimate:" + BitcoinUtils.estimateSize(1, 1, 1, 0));
+        System.out.println("input len:"+tx.getInput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 1:"+tx.getOutput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 2:"+tx.getOutput(1).unsafeBitcoinSerialize().length);
+        
+        Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(1, 1, 1, 0)) < 2);
+    }
+    
+    @Test
+    public void testFeeTwoMultiSigOutput() throws CoinbleskException, InsufficientFunds {
+        NetworkParameters params = UnitTestParams.get();
+        
+        ECKey ecKeychangeAddress = new ECKey();
+        ECKey ecKeyServerchangeAddress = new ECKey();
+        List<ECKey> listchangeAddress = new ArrayList<ECKey>();
+        listchangeAddress.add(ecKeychangeAddress);
+        listchangeAddress.add(ecKeyServerchangeAddress);
+        Script p2shScriptchangeAddress = BitcoinUtils.createP2SHOutputScript(2, listchangeAddress);
+        Address p2shAddresschangeAddress = p2shScriptchangeAddress.getToAddress(params);
+        
+        ECKey ecKey = new ECKey();
+        ECKey ecKeyServer = new ECKey();
+        List<ECKey> list = new ArrayList<ECKey>();
+        list.add(ecKey);
+        list.add(ecKeyServer);
+        Script p2shScript = BitcoinUtils.createP2SHOutputScript(2, list);
+        Address p2shAddress = p2shScript.getToAddress(params);
+        
+        ECKey funding = new ECKey();
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, funding);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), p2shAddresschangeAddress, 
+                p2shAddress, Coin.COIN.value, false);
+        tx = BitcoinUtils.sign(params, tx, funding);
+        
+        System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("estimate:" + BitcoinUtils.estimateSize(0, 2, 1, 0));
+        System.out.println("input len:"+tx.getInput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 1:"+tx.getOutput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 2:"+tx.getOutput(1).unsafeBitcoinSerialize().length);
+        
+        Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(0, 2, 1, 0)) < 2);
+    }
+    
+    @Test
+    public void testFeeEverythingMultiSig() throws CoinbleskException, InsufficientFunds {
+        NetworkParameters params = UnitTestParams.get();
+        
+        ECKey ecKeychangeAddress = new ECKey();
+        ECKey ecKeyServerchangeAddress = new ECKey();
+        List<ECKey> listchangeAddress = new ArrayList<ECKey>();
+        listchangeAddress.add(ecKeychangeAddress);
+        listchangeAddress.add(ecKeyServerchangeAddress);
+        Script p2shScriptchangeAddress = BitcoinUtils.createP2SHOutputScript(2, listchangeAddress);
+        Address p2shAddresschangeAddress = p2shScriptchangeAddress.getToAddress(params);
+        
+        ECKey ecKey = new ECKey();
+        ECKey ecKeyServer = new ECKey();
+        List<ECKey> list = new ArrayList<ECKey>();
+        list.add(ecKey);
+        list.add(ecKeyServer);
+        Script p2shScript = BitcoinUtils.createP2SHOutputScript(2, list);
+        Address p2shAddress = p2shScript.getToAddress(params);
+        
+        ECKey ecKeyfunding = new ECKey();
+        ECKey ecKeyServerfunding = new ECKey();
+        List<ECKey> listfunding = new ArrayList<ECKey>();
+        listfunding.add(ecKeyfunding);
+        listfunding.add(ecKeyServerfunding);
+        Script p2shScriptfunding = BitcoinUtils.createP2SHOutputScript(2, listfunding);
+        Script redeem = BitcoinUtils.createRedeemScript(2, listfunding);
+        Address p2shAddressfunding = p2shScriptfunding.getToAddress(params);
+        
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, p2shAddressfunding);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), p2shAddresschangeAddress, 
+                p2shAddress, Coin.COIN.value, false);
+        List<TransactionSignature> sigs1 = BitcoinUtils.partiallySign(tx, redeem, ecKeyServerfunding);
+        List<TransactionSignature> sigs2 = BitcoinUtils.partiallySign(tx, redeem, ecKeyfunding);
+        
+        Assert.assertTrue(BitcoinUtils.applySignatures(tx, redeem, sigs1, sigs2, true));
+        
+        System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("estimate:" + BitcoinUtils.estimateSize(0, 2, 0, 1));
+        System.out.println("input len:"+tx.getInput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 1:"+tx.getOutput(0).unsafeBitcoinSerialize().length);
+        System.out.println("output len 2:"+tx.getOutput(1).unsafeBitcoinSerialize().length);
+        
+        Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(0, 2, 0, 1)) < 2);
     }
 }

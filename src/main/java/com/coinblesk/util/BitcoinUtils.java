@@ -82,14 +82,22 @@ public class BitcoinUtils {
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
         
+        int nrInputRegular = 0;
+        int nrInputsP2SH = 0;
+        
         for (TransactionOutput output : outputs) {
-            tx.addInput(output);
+            TransactionInput input = tx.addInput(output);
+            if(input.getScriptSig().isSentToMultiSig()) {
+                nrInputsP2SH++;
+            } else {
+                nrInputRegular++;
+            }
             totalAmount += output.getValue().value;
         }
         
         //now make it deterministic
         sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, changeAddress, addressTo, 
+        return createTxOutputs(params, tx, nrInputRegular, nrInputsP2SH, totalAmount, changeAddress, addressTo, 
                 amountToSpend, senderPaysFee);
         
     }
@@ -102,6 +110,9 @@ public class BitcoinUtils {
         final Transaction tx = new Transaction(params);
         long totalAmount = 0;
 
+        int nrInputRegular = 0;
+        int nrInputsP2SH = 0;
+        
         for (final Pair<TransactionOutPoint, Coin> p : outputsToUse) {
             if(p.element1() == null) {
                 throw new CoinbleskException("Coin cannot be null");
@@ -109,13 +120,18 @@ public class BitcoinUtils {
             final Coin coin = p.element1();
             final TransactionInput ti = new TransactionInput(params, null,
                     redeemScript.getProgram(), p.element0(), coin);
-            tx.addInput(ti);
+            TransactionInput input = tx.addInput(ti);
+            if(input.getScriptSig().isSentToMultiSig()) {
+                nrInputsP2SH++;
+            } else {
+                nrInputRegular++;
+            }
             totalAmount += coin.getValue();
         }
         
         //now make it deterministic
         sortTransactionInputs(tx);
-        return createTxOutputs(params, tx, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend, 
+        return createTxOutputs(params, tx, nrInputRegular, nrInputsP2SH, totalAmount, p2shAddressFrom, p2shAddressTo, amountToSpend, 
                 senderPaysFee);
     }
 
@@ -123,15 +139,32 @@ public class BitcoinUtils {
     											List<TransactionOutput> outputs, Address addressTo) 
     											throws CoinbleskException, InsufficientFunds {
         final Transaction tx = new Transaction(params);
-        final long feeOneOutput = calcFee(1, tx.getInputs().size());
+        
+        int outputRegular = 0;
+        int outputP2SH = 0;
+        int nrInputRegular = 0;
+        int nrInputsP2SH = 0;
         
         long totalAmount = 0;
         for (TransactionOutput output : outputs) {
-            tx.addInput(output);
+            TransactionInput input = tx.addInput(output);
+            if(input.getScriptSig().isSentToMultiSig()) {
+                nrInputsP2SH++;
+            } else {
+                nrInputRegular++;
+            }
             totalAmount += output.getValue().value;
         }
         //now make it deterministic
         sortTransactionInputs(tx);
+        
+        if(addressTo.isP2SHAddress()) {
+            outputP2SH++;
+        } else {
+            outputRegular++;
+        }
+        
+        final long feeOneOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH);
         
         Coin amountToSend = Coin.valueOf(totalAmount - feeOneOutput);
         if (!amountToSend.isPositive()) {
@@ -165,7 +198,7 @@ public class BitcoinUtils {
     }
     
     private static Transaction createTxOutputs (final NetworkParameters params, final Transaction tx, 
-            final long totalAmount, final Address changeAddress, final Address p2shAddressTo, 
+            final int nrInputRegular, final int nrInputsP2SH, final long totalAmount, final Address changeAddress, final Address p2shAddressTo, 
             final long amountToSpend, final boolean senderPaysFee) throws CoinbleskException, InsufficientFunds {
 
         if (amountToSpend > totalAmount) {
@@ -174,8 +207,23 @@ public class BitcoinUtils {
 
        
         final long remainingAmount = totalAmount - amountToSpend;
-        final long feeOneOutput = calcFee(1, tx.getInputs().size());
-        final long feeTwoOutput = calcFee(2, tx.getInputs().size());
+        
+        //inputs are all p2sh
+        int outputRegular = 0;
+        int outputP2SH = 0;
+        if(p2shAddressTo.isP2SHAddress()) {
+            outputP2SH++;
+        } else {
+            outputRegular++;
+        }
+        final long feeOneOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH); //no changeaddress used
+        //now with changeaddress
+        if(changeAddress.isP2SHAddress()) {
+            outputP2SH++;
+        } else {
+            outputRegular++;
+        }
+        final long feeTwoOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH);
         
         final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
         
@@ -238,23 +286,47 @@ public class BitcoinUtils {
     }
 
     public static int calcFee(Transaction tx) {
-        return calcFee(tx.getOutputs().size(), tx.getInputs().size());
+        int outputRegular = 0;
+        int outputP2SH = 0;
+        for(TransactionOutput output:tx.getOutputs()) {
+            if(output.getScriptPubKey().isPayToScriptHash()) {
+                outputP2SH++;
+            } else {
+                outputRegular++;
+            }
+        }
+        
+        int inputRegular = 0;
+        int inputP2SH = 0;
+        for(TransactionInput input:tx.getInputs()) {
+            if(input.getScriptSig().isSentToMultiSig()) {
+                inputP2SH++;
+            } else {
+                inputRegular++;
+            }
+        }
+        return calcFee(outputRegular, outputP2SH, inputRegular, inputP2SH);
     }
     
-    public static int calcFee(int nrOutputs, int nrInputs) {
+    public static int calcFee(int outputRegular, int nrOutputsP2SH, int nrInputRegular, int nrInputsP2SH) {
         // http://bitcoinexchangerate.org/test/fees
         // https://bitcoinfees.21.co/
         // http://bitcoinfees.com/
         // http://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
+        // http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
+        // http://bitcoin.stackexchange.com/questions/1195/how-to-calculate-transaction-size-before-sending
     	
-        //scriptsig ~260 per input 2 x 71/72 per signature, rest is redeem script ~118
-        //two output ~66 34/32
+    	return estimateSize(outputRegular, nrOutputsP2SH, nrInputRegular, nrInputsP2SH) * 30; 
+    }
+    
+    public static int estimateSize(int outputRegular, int nrOutputsP2SH, int nrInputRegular, int nrInputsP2SH) {
         //empty tx is 10 bytes
-    	
-    	// assume 2 outputs if none present
-    	int outputs = (nrOutputs > 0) ? nrOutputs : 2;
-        int len = 10 + (260 * nrInputs) + (34 * outputs);
-        return len * 30; 
+        
+        //input of regular address: 148 (compressed pk) +-1
+        //input of p2sh: 259, 2 x 71/72 per signature, rest is redeem script ~118
+        //output of regular address: 34
+        //output of p2sh: 32
+        return 10 + (outputRegular * 34) + (nrOutputsP2SH * 32) + (nrInputRegular * 148) + (nrInputsP2SH * 259);
     }
     
     public static Transaction sign(NetworkParameters params, Transaction tx, ECKey signKey) {
