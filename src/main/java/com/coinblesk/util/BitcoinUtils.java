@@ -48,6 +48,7 @@ public class BitcoinUtils {
 
     private final static Logger LOG = LoggerFactory.getLogger(BitcoinUtils.class);
     public final static long ONE_BITCOIN_IN_SATOSHI = Coin.COIN.value;
+    public final static int SATOSHIS_PER_BYTE = 30;
     
     public static Transaction createRefundTx(final NetworkParameters params, 
             final List<Pair<TransactionOutPoint, Coin>> refundClientPoints, final Script redeemScript,
@@ -86,8 +87,8 @@ public class BitcoinUtils {
         int nrInputsP2SH = 0;
         
         for (TransactionOutput output : outputs) {
-            TransactionInput input = tx.addInput(output);
-            if(input.getScriptSig().isSentToMultiSig()) {
+            tx.addInput(output);
+            if(output.getScriptPubKey().isPayToScriptHash()) {
                 nrInputsP2SH++;
             } else {
                 nrInputRegular++;
@@ -121,11 +122,8 @@ public class BitcoinUtils {
             final TransactionInput ti = new TransactionInput(params, null,
                     redeemScript.getProgram(), p.element0(), coin);
             TransactionInput input = tx.addInput(ti);
-            if(input.getScriptSig().isSentToMultiSig()) {
-                nrInputsP2SH++;
-            } else {
-                nrInputRegular++;
-            }
+            //with the redeem script, we always have p2sh
+            nrInputsP2SH++;
             totalAmount += coin.getValue();
         }
         
@@ -135,20 +133,20 @@ public class BitcoinUtils {
                 senderPaysFee);
     }
 
-    public static Transaction createSpendAllTx (NetworkParameters params,
-    											List<TransactionOutput> outputs, Address addressTo) 
-    											throws CoinbleskException, InsufficientFunds {
+    public static Transaction createSpendAllTx(NetworkParameters params,
+            List<TransactionOutput> outputs, Address addressTo)
+            throws CoinbleskException {
         final Transaction tx = new Transaction(params);
-        
+
         int outputRegular = 0;
         int outputP2SH = 0;
         int nrInputRegular = 0;
         int nrInputsP2SH = 0;
-        
+
         long totalAmount = 0;
         for (TransactionOutput output : outputs) {
-            TransactionInput input = tx.addInput(output);
-            if(input.getScriptSig().isSentToMultiSig()) {
+            tx.addInput(output);
+            if(output.getScriptPubKey().isPayToScriptHash()) {
                 nrInputsP2SH++;
             } else {
                 nrInputRegular++;
@@ -157,28 +155,29 @@ public class BitcoinUtils {
         }
         //now make it deterministic
         sortTransactionInputs(tx);
-        
-        if(addressTo.isP2SHAddress()) {
+
+        if (addressTo.isP2SHAddress()) {
             outputP2SH++;
         } else {
             outputRegular++;
         }
-        
+
         final long feeOneOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH);
-        
+
         Coin amountToSend = Coin.valueOf(totalAmount - feeOneOutput);
         if (!amountToSend.isPositive()) {
-        	throw new CoinbleskException("Amount ("+totalAmount+") too small (does not cover fee of "+feeOneOutput+")");
+            throw new CoinbleskException(
+                    "Amount (" + totalAmount + ") too small (does not cover fee of " + feeOneOutput + ")");
         }
-        
+
         TransactionOutput txOutRecipient = new TransactionOutput(params, tx, amountToSend, addressTo);
         checkMinValue(txOutRecipient);
         tx.addOutput(txOutRecipient);
-        
+
         checkFee(tx);
-        
+
         verifyTxSimple(tx);
-        
+
         return tx;
     }
     
@@ -207,6 +206,7 @@ public class BitcoinUtils {
 
        
         final long remainingAmount = totalAmount - amountToSpend;
+        LOG.debug("remaining amount is {}", remainingAmount);
         
         //inputs are all p2sh
         int outputRegular = 0;
@@ -217,6 +217,7 @@ public class BitcoinUtils {
             outputRegular++;
         }
         final long feeOneOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH); //no changeaddress used
+        
         //now with changeaddress
         if(changeAddress.isP2SHAddress()) {
             outputP2SH++;
@@ -224,8 +225,10 @@ public class BitcoinUtils {
             outputRegular++;
         }
         final long feeTwoOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH);
+        LOG.debug("fee 1 {}, 2 {}", feeOneOutput, feeTwoOutput);
         
         final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
+        LOG.debug("change amount is {}", changeAmount);
         
         final long fee;
         final long remainingDust;
@@ -235,11 +238,12 @@ public class BitcoinUtils {
                 !changeAmount.isLessThan((txOutChange = new TransactionOutput(params, tx, changeAmount, changeAddress)).getMinNonDustValue())) {
             tx.addOutput(txOutChange);
             fee = feeTwoOutput;
+            LOG.debug("Fee is {}", fee);
             remainingDust = 0;
         } else if(senderPaysFee) {
             LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
             if(remainingAmount - feeOneOutput < 0) {
-               throw new CoinbleskException("Value "+changeAmount+" negative, cannot create tx");
+               throw new CoinbleskException("Value "+(remainingAmount - feeOneOutput)+" negative, cannot create tx");
             }
             fee = feeOneOutput;
             remainingDust = remainingAmount - feeOneOutput;
@@ -248,6 +252,7 @@ public class BitcoinUtils {
             fee = feeOneOutput - changeAmount.value;
             remainingDust = 0;
         }
+        LOG.debug("remainingDust is {}", remainingDust);
         
         Coin amountToRecipient;
         if(senderPaysFee) {
@@ -316,7 +321,7 @@ public class BitcoinUtils {
         // http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
         // http://bitcoin.stackexchange.com/questions/1195/how-to-calculate-transaction-size-before-sending
     	
-    	return estimateSize(outputRegular, nrOutputsP2SH, nrInputRegular, nrInputsP2SH) * 30; 
+    	return estimateSize(outputRegular, nrOutputsP2SH, nrInputRegular, nrInputsP2SH) * SATOSHIS_PER_BYTE; 
     }
     
     public static int estimateSize(int outputRegular, int nrOutputsP2SH, int nrInputRegular, int nrInputsP2SH) {

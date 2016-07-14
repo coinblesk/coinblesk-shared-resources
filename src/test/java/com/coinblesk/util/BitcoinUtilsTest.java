@@ -381,6 +381,7 @@ public class BitcoinUtilsTest {
         Script p2shScriptfunding = BitcoinUtils.createP2SHOutputScript(2, listfunding);
         Script redeem = BitcoinUtils.createRedeemScript(2, listfunding);
         Address p2shAddressfunding = p2shScriptfunding.getToAddress(params);
+        System.out.println("we have a p2sh: "+p2shAddressfunding.isP2SHAddress());
         
         Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, p2shAddressfunding);
         Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), p2shAddresschangeAddress, 
@@ -397,5 +398,51 @@ public class BitcoinUtilsTest {
         System.out.println("output len 2:"+tx.getOutput(1).unsafeBitcoinSerialize().length);
         
         Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(0, 2, 0, 1)) < 2);
+    }
+    
+    @Test
+    public void testSpendAll() throws CoinbleskException, InsufficientFunds {
+        NetworkParameters params = UnitTestParams.get();
+        
+        ECKey ecKeychangeAddress = new ECKey();
+        ECKey ecKeyServerchangeAddress = new ECKey();
+        List<ECKey> listchangeAddress = new ArrayList<ECKey>();
+        listchangeAddress.add(ecKeychangeAddress);
+        listchangeAddress.add(ecKeyServerchangeAddress);
+        Script p2shScriptchangeAddress = BitcoinUtils.createP2SHOutputScript(2, listchangeAddress);
+        Address p2shAddresschangeAddress = p2shScriptchangeAddress.getToAddress(params);
+        
+        ECKey ecKey = new ECKey();
+        
+        Address destAddress = ecKey.toAddress(params);
+        
+        ECKey ecKeyfunding = new ECKey();
+        ECKey ecKeyServerfunding = new ECKey();
+        List<ECKey> listfunding = new ArrayList<ECKey>();
+        listfunding.add(ecKeyfunding);
+        listfunding.add(ecKeyServerfunding);
+        Script p2shScriptfunding = BitcoinUtils.createP2SHOutputScript(2, listfunding);
+        Script redeem = BitcoinUtils.createRedeemScript(2, listfunding);
+        Address p2shAddressfunding = p2shScriptfunding.getToAddress(params);
+        
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, p2shAddressfunding);
+        
+        Transaction txAll = BitcoinUtils.createSpendAllTx(params, coinBase.getOutputs(), destAddress);
+        
+        Coin value = txAll.getInputSum();
+        System.out.println("we can spend "+ value);
+        
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), p2shAddresschangeAddress, 
+                destAddress, value.value, false);
+        List<TransactionSignature> sigs1 = BitcoinUtils.partiallySign(tx, redeem, ecKeyServerfunding);
+        List<TransactionSignature> sigs2 = BitcoinUtils.partiallySign(tx, redeem, ecKeyfunding);
+        
+        Assert.assertTrue(BitcoinUtils.applySignatures(tx, redeem, sigs1, sigs2, true));
+        
+        System.out.println("tx:"+tx.getOutputs().size());
+        
+        System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("estimate:" + BitcoinUtils.estimateSize(1, 0, 0, 1));
+        Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(1, 0, 0, 1)) < 2);
     }
 }
