@@ -207,6 +207,22 @@ public class BitcoinUtilsTest {
     }
     
     @Test
+    public void testCreateTxNoChange2() throws InsufficientFunds, CoinbleskException {
+        NetworkParameters params = UnitTestParams.get();
+        ECKey changeAddress = new ECKey();
+        ECKey addressTo = new ECKey();
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, addressTo);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
+                addressTo.toAddress(params), Coin.FIFTY_COINS.value - 2000, false);
+        tx.verify();
+        tx = BitcoinUtils.sign(params, tx, addressTo);
+        BitcoinUtils.verifyTxFull(tx);
+        Assert.assertEquals(1, tx.getOutputs().size());
+        Assert.assertEquals(5760, tx.getFee().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 5760, tx.getOutput(0).getValue().value);
+    }
+    
+    @Test
     public void testCreateTxChange() throws InsufficientFunds, CoinbleskException {
         NetworkParameters params = UnitTestParams.get();
         ECKey changeAddress = new ECKey();
@@ -442,6 +458,8 @@ public class BitcoinUtilsTest {
         System.out.println("tx:"+tx.getOutputs().size());
         
         System.out.println("tx len:"+tx.unsafeBitcoinSerialize().length);
+        System.out.println("tx out1:"+tx.getOutputs().get(0).unsafeBitcoinSerialize().length);
+        System.out.println("tx in1:"+tx.getInputs().get(0).unsafeBitcoinSerialize().length);
         System.out.println("estimate:" + BitcoinUtils.estimateSize(1, 0, 0, 1));
         Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(1, 0, 0, 1)) < 2);
     }

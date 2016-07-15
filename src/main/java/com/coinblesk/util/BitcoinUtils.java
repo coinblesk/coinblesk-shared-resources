@@ -196,17 +196,15 @@ public class BitcoinUtils {
         return tx;
     }
     
-    private static Transaction createTxOutputs (final NetworkParameters params, final Transaction tx, 
+    private static Transaction createTxOutputs(final NetworkParameters params, final Transaction tx, 
             final int nrInputRegular, final int nrInputsP2SH, final long totalAmount, final Address changeAddress, final Address p2shAddressTo, 
             final long amountToSpend, final boolean senderPaysFee) throws CoinbleskException, InsufficientFunds {
 
         if (amountToSpend > totalAmount) {
             throw new InsufficientFunds();
         }
-
-       
-        final long remainingAmount = totalAmount - amountToSpend;
-        LOG.debug("remaining amount is {}", remainingAmount);
+        //this is always positive, see above
+        final long changeAmount = totalAmount - amountToSpend;
         
         //inputs are all p2sh
         int outputRegular = 0;
@@ -227,45 +225,71 @@ public class BitcoinUtils {
         final long feeTwoOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH);
         LOG.debug("fee 1 {}, 2 {}", feeOneOutput, feeTwoOutput);
         
-        final Coin changeAmount = Coin.valueOf(senderPaysFee ? (remainingAmount - feeTwoOutput) : remainingAmount);
-        LOG.debug("change amount is {}", changeAmount);
-        
-        final long fee;
-        final long remainingDust;
-        
-        TransactionOutput txOutChange = null;
-        if (changeAmount.isPositive() && 
-                !changeAmount.isLessThan((txOutChange = new TransactionOutput(params, tx, changeAmount, changeAddress)).getMinNonDustValue())) {
-            tx.addOutput(txOutChange);
-            fee = feeTwoOutput;
-            LOG.debug("Fee is {}", fee);
-            remainingDust = 0;
-        } else if(senderPaysFee) {
-            LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
-            if(remainingAmount - feeOneOutput < 0) {
-               throw new CoinbleskException("Value "+(remainingAmount - feeOneOutput)+" negative, cannot create tx");
+        //reduce the amount to send, as the recipient is paying. Instead of getting 2BTC, the recipient will get 1.9...BTC
+        if(!senderPaysFee) {
+            long amountToSpendOne = amountToSpend - feeOneOutput;
+            long amountToSpendTwo = amountToSpend - feeTwoOutput;
+            //now check if we still have a remainingAmount with two outputs
+            
+            Coin change = Coin.valueOf(changeAmount);
+            Coin spend = Coin.valueOf(amountToSpendTwo);
+            TransactionOutput changeOutput = new TransactionOutput(params, tx, change, changeAddress);
+            Coin changeDust = changeOutput.getMinNonDustValue();
+            
+            if(spend.isNegative()) {
+                throw new CoinbleskException("cannot spend negative amount: "+spend);
             }
-            fee = feeOneOutput;
-            remainingDust = remainingAmount - feeOneOutput;
+            
+            TransactionOutput spendOutput = new TransactionOutput(params, tx, spend, p2shAddressTo);
+            Coin sendDust = spendOutput.getMinNonDustValue();
+            if(!change.isLessThan(changeDust) && !spend.isLessThan(sendDust)) {
+                //we are good to go with two outputs!
+                tx.addOutput(changeOutput);
+                tx.addOutput(spendOutput);
+            } else if(!spend.isLessThan(sendDust)) {
+                //we need to change to one output as change is too small. Add remaining value to the amount, to
+                //have exactly the calculated fee
+                spend = Coin.valueOf(amountToSpendOne + changeAmount);
+                spendOutput = new TransactionOutput(params, tx, spend, p2shAddressTo);
+                if(spend.isLessThan(spendOutput.getMinNonDustValue())) {
+                    throw new CoinbleskException("spend considered dust, increase the amount to spend: "+change+"/"+spendOutput.getMinNonDustValue());
+                }
+                tx.addOutput(spendOutput);
+            } else {
+                throw new CoinbleskException("both change and spend too small1: "+change+"/"+spend);
+            }
         } else {
-            LOG.warn("Change too small {}, will be used as tx fee", changeAmount);
-            fee = feeOneOutput - changeAmount.value;
-            remainingDust = 0;
+            //since the sender is paying the fee, we need to reduce the change amount
+            long changeAmountTwo = changeAmount - feeTwoOutput;
+            
+            //now check if we still have a remainingAmount with two outputs
+            Coin change = Coin.valueOf(changeAmountTwo);
+            Coin spend = Coin.valueOf(amountToSpend);
+            TransactionOutput spendOutput = new TransactionOutput(params, tx, spend, p2shAddressTo);
+            Coin sendDust = spendOutput.getMinNonDustValue();
+            
+            if(!change.isNegative()) {
+                TransactionOutput changeOutput = new TransactionOutput(params, tx, change, changeAddress);
+                Coin changeDust = changeOutput.getMinNonDustValue();
+                if(!change.isLessThan(changeDust) && !spend.isLessThan(sendDust)) {
+                    //we are good to go with two outputs!
+                    tx.addOutput(changeOutput);
+                    tx.addOutput(spendOutput);
+                } 
+            } else if(!spend.isLessThan(sendDust)) {
+                //change too small, calculate with one output tx
+                long newAmountToSpend = totalAmount - feeOneOutput;
+                if(newAmountToSpend >= amountToSpend) {
+                    spend = Coin.valueOf(newAmountToSpend);
+                    spendOutput = new TransactionOutput(params, tx, spend, p2shAddressTo);
+                    tx.addOutput(spendOutput);
+                } else {
+                    throw new CoinbleskException("not enough funds to cover fees: "+newAmountToSpend+"/"+amountToSpend);
+                }
+            } else {
+                throw new CoinbleskException("both change and spend too small2: "+change+"/"+spend);
+            }
         }
-        LOG.debug("remainingDust is {}", remainingDust);
-        
-        Coin amountToRecipient;
-        if(senderPaysFee) {
-        	amountToRecipient = Coin.valueOf(amountToSpend + remainingDust);
-        } else {
-        	amountToRecipient = Coin.valueOf(amountToSpend-fee);
-        	if (!amountToRecipient.isPositive()) {
-        		throw new CoinbleskException("Amount to small to cover fees (output: " + amountToRecipient.value);
-        	}
-        }
-        TransactionOutput txOutRecipient = new TransactionOutput(params, tx, amountToRecipient, p2shAddressTo);
-        checkMinValue(txOutRecipient);
-        tx.addOutput(txOutRecipient);
         
         //failsafe if fees large
         checkFee(tx);
@@ -328,7 +352,7 @@ public class BitcoinUtils {
         //empty tx is 10 bytes
         
         //input of regular address: 148 (compressed pk) +-1
-        //input of p2sh: 259, 2 x 71/72 per signature, rest is redeem script ~118
+        //input of p2sh: 259, 2 x 71/72 per signature, rest is redeem script ~118 - can be 258, 259, 260
         //output of regular address: 34
         //output of p2sh: 32
         return 10 + (outputRegular * 34) + (nrOutputsP2SH * 32) + (nrInputRegular * 148) + (nrInputsP2SH * 259);
