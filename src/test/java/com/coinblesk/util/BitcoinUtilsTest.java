@@ -184,10 +184,26 @@ public class BitcoinUtilsTest {
         ECKey addressTo = new ECKey();
         Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, addressTo);
         Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
+                addressTo.toAddress(params), Coin.FIFTY_COINS.value - 1, true);
+        tx.verify();
+        tx = BitcoinUtils.sign(params, tx, addressTo);
+        BitcoinUtils.verifyTxFull(tx);
+    }
+    
+    @Test
+    public void testCreateTxFundsForFee() throws InsufficientFunds, CoinbleskException {
+        NetworkParameters params = UnitTestParams.get();
+        ECKey changeAddress = new ECKey();
+        ECKey addressTo = new ECKey();
+        Transaction coinBase = FakeTxBuilder.createFakeCoinbaseTx(params, addressTo);
+        Transaction tx = BitcoinUtils.createTx(params, coinBase.getOutputs(), changeAddress.toAddress(params), 
                 addressTo.toAddress(params), Coin.FIFTY_COINS.value, true);
         tx.verify();
         tx = BitcoinUtils.sign(params, tx, addressTo);
         BitcoinUtils.verifyTxFull(tx);
+        Assert.assertEquals(1, tx.getOutputs().size());
+        Assert.assertEquals(5760, tx.getFee().value);
+        Assert.assertEquals(Coin.FIFTY_COINS.value - 5760, tx.getOutput(0).getValue().value);
     }
     
     @Test

@@ -205,6 +205,7 @@ public class BitcoinUtils {
         }
         //this is always positive, see above
         final long changeAmount = totalAmount - amountToSpend;
+        final boolean spendAll = changeAmount == 0;
         
         //inputs are all p2sh
         int outputRegular = 0;
@@ -215,6 +216,19 @@ public class BitcoinUtils {
             outputRegular++;
         }
         final long feeOneOutput = calcFee(outputRegular, outputP2SH, nrInputRegular, nrInputsP2SH); //no changeaddress used
+        
+        if(spendAll) {
+            long newAmountToSpend = totalAmount - feeOneOutput;
+            //if we want to spend it all, it does not matter who pays the tx fee
+            Coin spend = Coin.valueOf(newAmountToSpend);
+            TransactionOutput spendOutput = new TransactionOutput(params, tx, spend, p2shAddressTo);
+            tx.addOutput(spendOutput);
+            //failsafe if fees large
+            checkFee(tx);
+            sortTransactionOutputs(tx);
+            verifyTxSimple(tx);
+            return tx;
+        }
         
         //now with changeaddress
         if(changeAddress.isP2SHAddress()) {
@@ -293,11 +307,8 @@ public class BitcoinUtils {
         
         //failsafe if fees large
         checkFee(tx);
-        
         sortTransactionOutputs(tx);
-        
         verifyTxSimple(tx);
-        
         return tx;
     }
     
