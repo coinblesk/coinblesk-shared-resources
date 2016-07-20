@@ -15,11 +15,13 @@
  */
 package com.coinblesk.json.v1;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Thomas Bocek
  */
-public class BaseTO<T extends BaseTO> { 
+public class BaseTO<T extends BaseTO> implements Serializable { 
     
     private int type = 0; //input/output - always valid
     private String message; //output
