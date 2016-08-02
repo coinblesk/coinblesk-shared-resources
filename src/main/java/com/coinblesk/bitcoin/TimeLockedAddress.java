@@ -303,7 +303,11 @@ public final class TimeLockedAddress {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(clientPubKey, serverPubKey, lockTime, addressHash);
+		return Objects.hash(
+				Arrays.hashCode(clientPubKey), 
+				Arrays.hashCode(serverPubKey), 
+				lockTime, 
+				Arrays.hashCode(addressHash));
 	}
 	
 	@Override

@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bitcoinj.core.Address;
@@ -15,12 +17,15 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.wallet.RedeemData;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.coinblesk.bitcoin.TimeLockedAddress;
 
 public class BitcoinUtilsTest {
     
@@ -478,5 +483,68 @@ public class BitcoinUtilsTest {
         System.out.println("tx in1:"+tx.getInputs().get(0).unsafeBitcoinSerialize().length);
         System.out.println("estimate:" + BitcoinUtils.estimateSize(1, 0, 0, 1));
         Assert.assertTrue(Math.abs(tx.unsafeBitcoinSerialize().length - BitcoinUtils.estimateSize(1, 0, 0, 1)) < 2);
+    }
+    
+    @Test
+    public void testSetFlagsOfCLTVInputs_AfterLocktime() {
+    	NetworkParameters params = UnitTestParams.get();
+    	
+    	long nowSeconds = System.currentTimeMillis()/1000;
+    	TimeLockedAddress tla1 = new TimeLockedAddress(new ECKey().getPubKey(), new ECKey().getPubKey(), nowSeconds-100);
+    	TimeLockedAddress tla2 = new TimeLockedAddress(new ECKey().getPubKey(), new ECKey().getPubKey(), nowSeconds-10);
+    	
+    	Transaction fundingTx = FakeTxBuilder.createFakeTxWithChangeAddress(params, Coin.COIN, tla1.getAddress(params), tla2.getAddress(params));
+        
+        Transaction txAll = null;
+		try {
+			txAll = BitcoinUtils.createSpendAllTx(params, fundingTx.getOutputs(), new ECKey().toAddress(params));
+		} catch (CoinbleskException e) {
+			fail(e.getMessage());
+		}
+		
+		Map<String, Long> outputTimeLocks = new HashMap<>();
+		outputTimeLocks.put(SerializeUtils.bytesToHex(fundingTx.getOutput(0).getScriptPubKey().getPubKeyHash()).toLowerCase(), tla1.getLockTime());
+		outputTimeLocks.put(SerializeUtils.bytesToHex(fundingTx.getOutput(1).getScriptPubKey().getPubKeyHash()).toLowerCase(), tla2.getLockTime());
+		
+		BitcoinUtils.setFlagsOfCLTVInputs(txAll, outputTimeLocks, nowSeconds);
+    	
+    	assertTrue(txAll.getLockTime() >= 1234567);
+    	
+    	// assert that inputs have max seqNo not set
+    	for (TransactionInput txIn : txAll.getInputs()) {
+    		assertTrue(txIn.getSequenceNumber() < TransactionInput.NO_SEQUENCE);
+    	}
+    }
+    
+    
+        @Test
+    public void testSetFlagsOfCLTVInputs_BeforeLocktime() {
+    	NetworkParameters params = UnitTestParams.get();
+    	
+    	long nowSeconds = System.currentTimeMillis()/1000;
+    	TimeLockedAddress tla1 = new TimeLockedAddress(new ECKey().getPubKey(), new ECKey().getPubKey(), nowSeconds+1000);
+    	TimeLockedAddress tla2 = new TimeLockedAddress(new ECKey().getPubKey(), new ECKey().getPubKey(), nowSeconds+10000);
+    	
+    	Transaction fundingTx = FakeTxBuilder.createFakeTxWithChangeAddress(params, Coin.COIN, tla1.getAddress(params), tla2.getAddress(params));
+        
+        Transaction txAll = null;
+		try {
+			txAll = BitcoinUtils.createSpendAllTx(params, fundingTx.getOutputs(), new ECKey().toAddress(params));
+		} catch (CoinbleskException e) {
+			fail(e.getMessage());
+		}
+		
+		Map<String, Long> outputTimeLocks = new HashMap<>();
+		outputTimeLocks.put(SerializeUtils.bytesToHex(fundingTx.getOutput(0).getScriptPubKey().getPubKeyHash()).toLowerCase(), tla1.getLockTime());
+		outputTimeLocks.put(SerializeUtils.bytesToHex(fundingTx.getOutput(1).getScriptPubKey().getPubKeyHash()).toLowerCase(), tla2.getLockTime());
+		
+		BitcoinUtils.setFlagsOfCLTVInputs(txAll, outputTimeLocks, nowSeconds);
+    	
+    	assertTrue(txAll.getLockTime() == 0);
+    	
+    	// assert that inputs have max seqNo set
+    	for (TransactionInput txIn : txAll.getInputs()) {
+    		assertTrue(txIn.getSequenceNumber() == TransactionInput.NO_SEQUENCE);
+    	}
     }
 }
