@@ -19,7 +19,7 @@ package com.coinblesk.json.v1;
  *
  * @author Thomas Bocek
  */
-public class ExchangeRateTO extends BaseTO<KeyTO> {
+public class ExchangeRateTO extends BaseTO<ExchangeRateTO> {
 
     private String name;
     private String rate;
