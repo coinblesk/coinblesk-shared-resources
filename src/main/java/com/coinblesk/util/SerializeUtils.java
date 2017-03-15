@@ -68,7 +68,7 @@ public class SerializeUtils {
     // bug report: https://github.com/springfox/springfox/issues/1608
     private final static class SwaggerJsonToGsonAdapter implements JsonSerializer<Json> {
         @Override
-        public JsonElement serialize(Json json, Type typeOfSrc, JsonSerializationContext context) {
+        public JsonElement serialize(Json json, Type type, JsonSerializationContext context) {
             final JsonParser parser = new JsonParser();
             return parser.parse(json.value());
         }
@@ -87,7 +87,6 @@ public class SerializeUtils {
                 JsonDeserializationContext context) throws JsonParseException {
             return Base64.decode(json.getAsString(), Base64.NO_WRAP);
         }
-
 
     }
 
