@@ -15,21 +15,12 @@
  */
 package com.coinblesk.util;
 
-import com.coinblesk.json.v1.BaseTO;
-import com.coinblesk.json.v1.TxSig;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -40,6 +31,21 @@ import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.coinblesk.json.v1.BaseTO;
+import com.coinblesk.json.v1.TxSig;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+import springfox.documentation.spring.web.json.Json;
 
 /**
  *
@@ -54,11 +60,22 @@ public class SerializeUtils {
 
     static {
         GSON = new GsonBuilder().setPrettyPrinting().registerTypeHierarchyAdapter(byte[].class,
-            new ByteArrayToBase64TypeAdapter()).create();
+            new ByteArrayToBase64TypeAdapter()).registerTypeAdapter(Json.class, new SwaggerJsonToGsonAdapter()).create();
     }
-    
+
+    // this fixes a bug with the combination of Swagger and GSON, see
+    // stackoverflow fix: http://stackoverflow.com/a/30220562/3233827
+    // bug report: https://github.com/springfox/springfox/issues/1608
+    private final static class SwaggerJsonToGsonAdapter implements JsonSerializer<Json> {
+        @Override
+        public JsonElement serialize(Json json, Type type, JsonSerializationContext context) {
+            final JsonParser parser = new JsonParser();
+            return parser.parse(json.value());
+        }
+    }
+
     private final static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
-       
+
         @Override
         public JsonElement serialize(byte[] src, java.lang.reflect.Type typeOfSrc,
                 JsonSerializationContext context) {
@@ -70,8 +87,7 @@ public class SerializeUtils {
                 JsonDeserializationContext context) throws JsonParseException {
             return Base64.decode(json.getAsString(), Base64.NO_WRAP);
         }
-        
-        
+
     }
 
     public static <K extends BaseTO<?>> K signJSON(final K k, final ECKey ecKey)  {
@@ -80,18 +96,18 @@ public class SerializeUtils {
         k.messageSig(signature);
         return k;
     }
-    
+
 	public static <K extends BaseTO<?>> TxSig signJSONRaw(final K k, final ECKey ecKey)  {
         final String json = GSON.toJson(k);
-        
+
         final String canonicalJSON = canonicalizeJSON(json);
-        final Sha256Hash hash = hash(canonicalJSON); 
-  
+        final Sha256Hash hash = hash(canonicalJSON);
+
         LOG.debug("json sign serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
         final ECKey.ECDSASignature sig = ecKey.sign(hash);
         return new TxSig().sigR(sig.r.toString()).sigS(sig.s.toString());
     }
-    
+
     public static String canonicalizeJSON(final String json) {
         final String lines[] = json.split("\\n");
         final List<String> tmpLines = new ArrayList<>(lines.length);
@@ -109,7 +125,7 @@ public class SerializeUtils {
         }
         return sb.toString();
     }
-    
+
     public static Sha256Hash hash(final String canonicalizeJSON) {
         return Sha256Hash.wrap(Sha256Hash.hash(canonicalizeJSON.getBytes()));
     }
@@ -122,16 +138,16 @@ public class SerializeUtils {
         k.messageSig(toCheck);
         return success;
     }
-    
+
     public static <K extends BaseTO<?>> boolean verifyJSONSignatureRaw(final K k, final TxSig signature, final ECKey key) {
         final ECKey.ECDSASignature sig = new ECKey.ECDSASignature(
         		new BigInteger(signature.sigR()), new BigInteger(signature.sigS()));
         final String json = GSON.toJson(k);
         final String canonicalJSON = canonicalizeJSON(json);
         final Sha256Hash hash = hash(canonicalJSON);
-        LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);        
+        LOG.debug("json verify serialized to: [{}]=[{}]=hash:{}", json, canonicalJSON, hash);
         return key.verify(hash, sig);
-    }    
+    }
 
     public static boolean verifyTxSignatures(Transaction tx, List<TransactionSignature> sigs,
             Script redeemScript, ECKey serverPubKey) {
@@ -203,7 +219,7 @@ public class SerializeUtils {
         }
         return retVal;
     }
-    
+
     public static String bytesToHex(final byte[] bytes) {
         final int len = bytes.length;
         final char[] hexChars = new char[len * 2];
