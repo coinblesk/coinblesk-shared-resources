@@ -17,9 +17,12 @@ package com.coinblesk.util;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
@@ -59,8 +62,23 @@ public class SerializeUtils {
     public static final Gson GSON;
 
     static {
-        GSON = new GsonBuilder().setPrettyPrinting().registerTypeHierarchyAdapter(byte[].class,
-            new ByteArrayToBase64TypeAdapter()).registerTypeAdapter(Json.class, new SwaggerJsonToGsonAdapter()).create();
+        GSON = new GsonBuilder().setPrettyPrinting()
+            .registerTypeHierarchyAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
+            .registerTypeAdapter(Json.class, new SwaggerJsonToGsonAdapter())
+            .registerTypeAdapter(Date.class, new DateToGsonAdapter()).create();
+    }
+
+    // create dates in ISO standard
+    private final static class DateToGsonAdapter implements JsonSerializer<Date> {
+        @Override
+        public JsonElement serialize(Date date, Type type, JsonSerializationContext context) {
+            TimeZone timeZone = TimeZone.getTimeZone("UTC");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+            simpleDateFormat.setTimeZone(timeZone);
+            String formattedDate = simpleDateFormat.format(date);
+
+            return new JsonPrimitive(formattedDate);
+        }
     }
 
     // this fixes a bug with the combination of Swagger and GSON, see
