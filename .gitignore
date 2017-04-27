@@ -10,3 +10,4 @@
 .settings/
 bin/
 gradle/
+.nb-gradle-properties
