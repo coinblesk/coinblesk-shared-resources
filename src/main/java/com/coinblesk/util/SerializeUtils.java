@@ -48,8 +48,6 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import springfox.documentation.spring.web.json.Json;
-
 /**
  *
  * @author Thomas Bocek
@@ -64,7 +62,6 @@ public class SerializeUtils {
     static {
         GSON = new GsonBuilder().setPrettyPrinting()
             .registerTypeHierarchyAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
-            .registerTypeAdapter(Json.class, new SwaggerJsonToGsonAdapter())
             .registerTypeAdapter(Date.class, new DateToGsonAdapter()).create();
     }
 
@@ -78,17 +75,6 @@ public class SerializeUtils {
             String formattedDate = simpleDateFormat.format(date);
 
             return new JsonPrimitive(formattedDate);
-        }
-    }
-
-    // this fixes a bug with the combination of Swagger and GSON, see
-    // stackoverflow fix: http://stackoverflow.com/a/30220562/3233827
-    // bug report: https://github.com/springfox/springfox/issues/1608
-    private final static class SwaggerJsonToGsonAdapter implements JsonSerializer<Json> {
-        @Override
-        public JsonElement serialize(Json json, Type type, JsonSerializationContext context) {
-            final JsonParser parser = new JsonParser();
-            return parser.parse(json.value());
         }
     }
 
