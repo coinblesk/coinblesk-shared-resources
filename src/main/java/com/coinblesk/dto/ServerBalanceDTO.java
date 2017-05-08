@@ -7,7 +7,7 @@ public class ServerBalanceDTO {
 
 	private long sumOfAllPendingTransactions;
 	private long sumOfAllVirtualPayments;
-	private long serverPotInitial;
+	private long serverPotBaseline;
 	private long serverPotCurrent;
 
 }
