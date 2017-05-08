@@ -6,7 +6,7 @@ import lombok.Data;
 public class ServerBalanceDTO {
 
 	private long sumOfAllPendingTransactions;
-	private long sumOfAllVirtualPayments;
+	private long sumOfAllVirtualBalances;
 	private long serverPotBaseline;
 	private long serverPotCurrent;
 
