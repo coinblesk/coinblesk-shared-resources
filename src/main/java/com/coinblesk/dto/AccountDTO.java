@@ -1,9 +1,8 @@
 package com.coinblesk.dto;
 
-import lombok.Data;
-
 import java.util.Date;
-import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class AccountDTO {
@@ -14,5 +13,4 @@ public class AccountDTO {
 	private final long virtualBalance;
 	private final long satoshiBalance;
 	private final long totalBalance;
-	private final List<TimeLockedAddressDTO> timeLockedAddresses;
 }
