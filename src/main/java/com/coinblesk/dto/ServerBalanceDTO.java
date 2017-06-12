@@ -10,4 +10,6 @@ public class ServerBalanceDTO {
 	private long serverPotBaseline;
 	private long serverPotCurrent;
 
+	private boolean inSync;
+
 }
