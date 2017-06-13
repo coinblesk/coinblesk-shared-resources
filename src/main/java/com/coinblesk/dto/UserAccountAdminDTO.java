@@ -1,8 +1,8 @@
 package com.coinblesk.dto;
 
-import lombok.Data;
-
 import java.util.Date;
+
+import lombok.Data;
 
 @Data
 public class UserAccountAdminDTO {
@@ -12,5 +12,6 @@ public class UserAccountAdminDTO {
 	private boolean deleted;
 	private String userRole;
 	private Date creationDate;
+	private String accountPublicKeyClient;
 
 }

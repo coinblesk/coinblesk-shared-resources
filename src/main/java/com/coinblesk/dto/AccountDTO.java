@@ -17,4 +17,5 @@ public class AccountDTO {
 	private final Date broadcastBefore;
 	private final Date nonce;
 	private final String channelTransaction;
+	private final String userAccountEmail;
 }
