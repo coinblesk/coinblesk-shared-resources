@@ -21,4 +21,7 @@ public class UserAccountCreateDTO {
 	@NotNull
 	private String clientPrivateKeyEncrypted;
 
+	@NotNull
+	private Long lockTime;
+
 }
