@@ -10,7 +10,7 @@ sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 group = 'com.coinblesk'
-version = '1.4.93'
+version = '1.4.95'
 
 repositories {
     mavenLocal()
