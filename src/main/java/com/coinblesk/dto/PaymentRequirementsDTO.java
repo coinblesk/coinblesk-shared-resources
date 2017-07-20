@@ -20,4 +20,7 @@ public class PaymentRequirementsDTO {
 
 	@NotNull
 	private long currentTransactionFees;
+
+	@NotNull
+	private PaymentDecisionDTO paymentDecisionDTO;
 }
