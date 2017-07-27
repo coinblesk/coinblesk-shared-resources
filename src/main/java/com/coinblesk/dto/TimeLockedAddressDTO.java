@@ -1,8 +1,8 @@
 package com.coinblesk.dto;
 
-import lombok.Data;
-
 import java.util.Date;
+
+import lombok.Data;
 
 @Data
 public class TimeLockedAddressDTO {
@@ -11,5 +11,6 @@ public class TimeLockedAddressDTO {
 	private final Date createdAt;
 	private final Date lockedUntil;
 	private final Boolean locked;
+	private final String redeemScript;
 	private final Long balance;
 }
