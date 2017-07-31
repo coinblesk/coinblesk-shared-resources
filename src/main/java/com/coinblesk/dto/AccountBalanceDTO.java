@@ -9,6 +9,7 @@ public class AccountBalanceDTO {
 
 	private Long virtualBalance;
 	private Long totalBalance;
+	private Long channelTransactionAmount;
 	private Map<String, Long> timeLockedAddresses;
 
 }

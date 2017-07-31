@@ -10,6 +10,8 @@ public class FundsDTO {
 	private String clientPublicKey;
 	private String serverPublicKey;
 	private Long virtualBalance;
+	private long totalBalance;
+	private long channelTransactionAmount;
 	private boolean locked;
 
 	private List<TimeLockedAddressDTO> timeLockedAddresses;

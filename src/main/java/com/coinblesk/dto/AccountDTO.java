@@ -12,6 +12,7 @@ public class AccountDTO {
 	private final Date timeCreated;
 	private final long virtualBalance;
 	private final long satoshiBalance;
+	private final long channelTransactionAmount;
 	private final long totalBalance;
 	private final boolean locked;
 	private final Date broadcastBefore;
