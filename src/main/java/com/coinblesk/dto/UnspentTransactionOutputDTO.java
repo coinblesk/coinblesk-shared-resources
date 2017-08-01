@@ -14,6 +14,6 @@ public class UnspentTransactionOutputDTO {
 	private Integer index;
 
 	@NotNull
-	private String transactionHash;
+	private String transaction;
 
 }
